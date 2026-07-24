@@ -46,7 +46,7 @@ export default function PublicClassModal({ instrument, schedule, whatsappNumber,
         </button>
 
         {instrument.images?.[0] ? (
-          <div className="relative h-48 w-full overflow-hidden bg-stage sm:h-56">
+          <div className="relative h-64 w-full overflow-hidden bg-stage sm:h-72">
             <img
               src={assetUrl(instrument.images[0])}
               alt={instrument.name}
@@ -54,7 +54,7 @@ export default function PublicClassModal({ instrument, schedule, whatsappNumber,
             />
           </div>
         ) : (
-          <div className="flex h-48 w-full items-center justify-center bg-stage sm:h-56">
+          <div className="flex h-64 w-full items-center justify-center bg-stage sm:h-72">
             <Logo className="h-14 w-14 opacity-60" />
           </div>
         )}
