@@ -48,8 +48,23 @@ export default function ImageUploader({ value = [], onChange, label }) {
         </div>
       )}
 
-      <input ref={inputRef} type="file" accept="image/*" multiple onChange={handleFiles} disabled={uploading} />
-      {uploading && <p className="text-sm text-ink/60">Subiendo...</p>}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        onChange={handleFiles}
+        disabled={uploading}
+        className="hidden"
+      />
+      <button
+        type="button"
+        className="btn secondary"
+        onClick={() => inputRef.current?.click()}
+        disabled={uploading}
+      >
+        {uploading ? 'Subiendo...' : 'Elegir imagenes'}
+      </button>
       {error && <p className="error">{error}</p>}
     </div>
   );
