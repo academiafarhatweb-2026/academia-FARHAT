@@ -127,7 +127,7 @@ function AdminLoginForm() {
         <input id="adminEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
       </div>
       <div className="field">
-        <label htmlFor="adminPassword">Contrasena</label>
+        <label htmlFor="adminPassword">Contraseña</label>
         <input id="adminPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
       </div>
       {error && <p className="error">{error}</p>}
