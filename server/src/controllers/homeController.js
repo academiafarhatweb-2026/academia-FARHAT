@@ -8,7 +8,10 @@ async function buildPublicPayload(content) {
 
   const classes = await FixedClass.find({ active: true }).populate('instrument').populate('teacher');
   const schedule = classes
-    .filter((c) => publicInstrumentIds.has(c.instrument._id.toString()))
+    // A class can end up with a dangling instrument/teacher reference if that
+    // catalog entry was deleted without deactivating the class — skip those
+    // instead of crashing the whole Home payload.
+    .filter((c) => c.instrument && c.teacher && publicInstrumentIds.has(c.instrument._id.toString()))
     .map((c) => ({
       instrumentId: c.instrument._id,
       instrumentName: c.instrument.name,
