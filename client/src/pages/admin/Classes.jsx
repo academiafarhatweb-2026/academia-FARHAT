@@ -54,16 +54,23 @@ export default function Classes() {
 
   const filteredItems = items.filter(
     (item) =>
-      (!filterInstrument || item.instrument._id === filterInstrument) &&
-      (!filterTeacher || item.teacher._id === filterTeacher)
+      (!filterInstrument || item.instrument?._id === filterInstrument) &&
+      (!filterTeacher || item.teacher?._id === filterTeacher)
   );
 
   // One group per instrument+teacher; within each, one row per day (merged).
+  // A class can end up with a dangling instrument/teacher reference if that
+  // catalog entry was deleted without cleaning up the class — show it with a
+  // clear label instead of crashing, so it can still be fixed or removed here.
   const groups = new Map();
   for (const item of filteredItems) {
-    const key = `${item.instrument._id}-${item.teacher._id}`;
+    const key = `${item.instrument?._id || 'sin-instrumento'}-${item.teacher?._id || 'sin-profesor'}`;
     if (!groups.has(key)) {
-      groups.set(key, { instrumentName: item.instrument.name, teacherName: item.teacher.name, items: [] });
+      groups.set(key, {
+        instrumentName: item.instrument?.name || 'Instrumento eliminado',
+        teacherName: item.teacher?.name || 'Profesor eliminado',
+        items: [],
+      });
     }
     groups.get(key).items.push(item);
   }
