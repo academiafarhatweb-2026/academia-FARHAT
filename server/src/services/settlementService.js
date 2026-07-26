@@ -22,7 +22,10 @@ async function generateSettlement(teacher, periodMonth, periodYear) {
 
   for (const enrollment of enrollments) {
     const primaryClass = enrollment.classes[0];
-    if (!primaryClass || primaryClass.teacher._id.toString() !== teacher._id.toString()) continue;
+    // Skip enrollments whose teacher/instrument/plan was deleted without
+    // cleaning up the reference — nothing to settle against without all three.
+    if (!primaryClass || !primaryClass.teacher || !primaryClass.instrument || !enrollment.plan || !enrollment.student) continue;
+    if (primaryClass.teacher._id.toString() !== teacher._id.toString()) continue;
 
     const payments = await Payment.find({ enrollment: enrollment._id });
     const allDates = payments.flatMap((p) => p.classDates);
