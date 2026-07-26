@@ -16,9 +16,11 @@ function classScheduleLine(cls) {
 function toFormValue(enrollment) {
   if (!enrollment) return emptyForm;
   return {
-    student: enrollment.student._id,
-    plan: enrollment.plan._id,
-    customValue: enrollment.customValue ?? enrollment.plan.value,
+    // The student/plan can end up null if that record was deleted after this
+    // enrollment was created — fall back so editing doesn't crash outright.
+    student: enrollment.student?._id || '',
+    plan: enrollment.plan?._id || '',
+    customValue: enrollment.customValue ?? enrollment.plan?.value ?? '',
     classes: enrollment.classes.map((c) => c._id),
     enrollmentDate: enrollment.enrollmentDate.slice(0, 10),
   };
@@ -65,7 +67,9 @@ export default function Enrollments() {
   }, [mode, selected]);
 
   function classLabel(cls) {
-    return `${cls.instrument.name} - ${cls.teacher.name} - ${cls.slots.map((s) => `${dayLabel(s.day)} ${s.startHour}-${s.endHour}`).join(', ')}`;
+    const instrumentName = cls.instrument?.name || 'Instrumento eliminado';
+    const teacherName = cls.teacher?.name || 'Profesor eliminado';
+    return `${instrumentName} - ${teacherName} - ${cls.slots.map((s) => `${dayLabel(s.day)} ${s.startHour}-${s.endHour}`).join(', ')}`;
   }
 
   function addClass() {
