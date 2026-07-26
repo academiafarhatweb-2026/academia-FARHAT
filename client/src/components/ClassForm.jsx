@@ -6,8 +6,10 @@ const emptyForm = { instrument: '', teacher: '', slots: [] };
 function toFormValue(fixedClass) {
   if (!fixedClass) return emptyForm;
   return {
-    instrument: fixedClass.instrument._id,
-    teacher: fixedClass.teacher._id,
+    // A class can reference a teacher/instrument that was since deleted —
+    // fall back to empty so the admin has to pick a valid one to save again.
+    instrument: fixedClass.instrument?._id || '',
+    teacher: fixedClass.teacher?._id || '',
     slots: fixedClass.slots,
   };
 }

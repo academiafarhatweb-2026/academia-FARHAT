@@ -37,7 +37,7 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
   async function handleDeleteClass() {
     const ok = await confirm({
       title: 'Eliminar clase',
-      message: `Esto elimina "${classItem.instrument.name} - ${classItem.teacher.name}" de este horario. Continuar?`,
+      message: `Esto elimina "${classItem.instrument?.name || 'Instrumento eliminado'} - ${classItem.teacher?.name || 'Profesor eliminado'}" de este horario. Continuar?`,
       confirmLabel: 'Eliminar',
       danger: true,
     });
@@ -50,7 +50,7 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
   async function handleRemoveStudent(enrollment) {
     const ok = await confirm({
       title: 'Quitar alumno',
-      message: `Esto quita a ${enrollment.student.name} de esta clase. Continuar?`,
+      message: `Esto quita a ${enrollment.student?.name || 'este alumno'} de esta clase. Continuar?`,
       confirmLabel: 'Quitar',
       danger: true,
     });
@@ -88,7 +88,7 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
   }
 
   return (
-    <Modal title={`${classItem.instrument.name} - ${classItem.teacher.name}`} onClose={onClose}>
+    <Modal title={`${classItem.instrument?.name || 'Instrumento eliminado'} - ${classItem.teacher?.name || 'Profesor eliminado'}`} onClose={onClose}>
       <Tabs
         tabs={[
           {
@@ -115,7 +115,7 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
                   {enrolledInClass.map((e) => (
                     <li key={e._id} className="flex-row justify-between" style={{ marginBottom: 8 }}>
                       <div>
-                        <div className="font-semibold text-ink">{e.student.name}</div>
+                        <div className="font-semibold text-ink">{e.student?.name || 'Alumno eliminado'}</div>
                         <div className="flex-row" style={{ marginTop: 2 }}>
                           <ExpirationBadge status={e.expirationStatus} />
                           <span className={e.paid ? 'badge badge-active' : 'badge badge-expired'}>

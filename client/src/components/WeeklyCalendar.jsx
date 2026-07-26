@@ -12,21 +12,23 @@ function colorForInstrument(name) {
 }
 
 function rateFor(teacher, instrumentId) {
-  return teacher.rates?.find((r) => String(r.instrument) === String(instrumentId))?.percentage;
+  return teacher?.rates?.find((r) => String(r.instrument) === String(instrumentId))?.percentage;
 }
 
 // Groups the flat FixedClass list into one row per teacher+instrument, matching
 // the paper schedule (profesor | % | instrumento | dias) instead of a day/hour
 // grid — each day column just lists the hour(s) that combination meets.
+// A class can reference a teacher/instrument that was since deleted — those
+// show up as "Profesor eliminado" / "Instrumento eliminado" instead of crashing.
 function groupClasses(classes) {
   const groups = new Map();
   for (const c of classes) {
-    const key = `${c.teacher._id}-${c.instrument._id}`;
+    const key = `${c.teacher?._id || 'none'}-${c.instrument?._id || 'none'}`;
     if (!groups.has(key)) {
       groups.set(key, {
-        teacherName: c.teacher.name,
-        instrumentName: c.instrument.name,
-        percentage: rateFor(c.teacher, c.instrument._id),
+        teacherName: c.teacher?.name || 'Profesor eliminado',
+        instrumentName: c.instrument?.name || 'Instrumento eliminado',
+        percentage: rateFor(c.teacher, c.instrument?._id),
         byDay: new Map(),
       });
     }
@@ -56,18 +58,18 @@ export default function WeeklyCalendar({ classes, onSelect }) {
           </tr>
         </thead>
         <tbody>
-          {rows.map((row, i) => (
+          {rows.map((group, i) => (
             <tr key={i}>
-              <td className="font-semibold text-ink">{row.teacherName}</td>
-              <td className="font-mono text-ink/60">{row.percentage != null ? `${row.percentage}%` : '-'}</td>
+              <td className="font-semibold text-ink">{group.teacherName}</td>
+              <td className="font-mono text-ink/60">{group.percentage != null ? `${group.percentage}%` : '-'}</td>
               <td>
                 <span className="flex-row" style={{ gap: 6 }}>
-                  <span className={`h-2 w-2 shrink-0 rounded-full ${colorForInstrument(row.instrumentName)}`} />
-                  {row.instrumentName}
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${colorForInstrument(group.instrumentName)}`} />
+                  {group.instrumentName}
                 </span>
               </td>
               {DAY_COLUMNS.map((d) => {
-                const entries = (row.byDay.get(d.value) || []).sort((a, b) => a.startHour - b.startHour);
+                const entries = (group.byDay.get(d.value) || []).sort((a, b) => a.startHour - b.startHour);
                 return (
                   <td key={d.value}>
                     {entries.length > 0 && (

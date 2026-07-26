@@ -3,7 +3,7 @@ const { createPayment } = require('../services/paymentService');
 const { spanishOrdinal } = require('../utils/ordinal');
 
 function buildReceipt(payment, enrollment) {
-  const instrumentNames = [...new Set(enrollment.classes.map((c) => c.instrument.name))];
+  const instrumentNames = [...new Set(enrollment.classes.map((c) => c.instrument?.name).filter(Boolean))];
   // Older payments (created before classEntries existed) fall back to the single
   // enrollment instrument for every date.
   const entries = payment.classEntries?.length
@@ -12,7 +12,7 @@ function buildReceipt(payment, enrollment) {
 
   return {
     paymentId: payment._id,
-    studentName: enrollment.student.name,
+    studentName: enrollment.student?.name || 'Alumno eliminado',
     amount: payment.amount,
     classesCount: payment.classesCount,
     instrumentName: instrumentNames.join(' y '),
@@ -36,6 +36,9 @@ async function create(req, res) {
   } catch (err) {
     if (err.message === 'Enrollment not found') {
       return res.status(404).json({ message: 'No se encontro la inscripcion' });
+    }
+    if (err.message === 'Enrollment plan missing') {
+      return res.status(400).json({ message: 'Esta inscripcion no tiene un plan valido. Cargala de nuevo o indica un monto manual.' });
     }
     throw err;
   }

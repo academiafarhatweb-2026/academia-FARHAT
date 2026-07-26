@@ -14,7 +14,7 @@ async function createPayment({ enrollmentId, classesCount, amount }) {
   // with several classes (e.g. Canto + Guitarra on different days) can tell which
   // class each occurrence belongs to instead of assuming they're all the same instrument.
   const slots = enrollment.classes.flatMap((c) =>
-    c.slots.map((s) => ({ day: s.day, startHour: s.startHour, endHour: s.endHour, instrumentName: c.instrument.name }))
+    c.slots.map((s) => ({ day: s.day, startHour: s.startHour, endHour: s.endHour, instrumentName: c.instrument?.name || 'Instrumento eliminado' }))
   );
 
   const lastPayment = await Payment.findOne({ enrollment: enrollmentId }).sort({ createdAt: -1 });
@@ -28,8 +28,15 @@ async function createPayment({ enrollmentId, classesCount, amount }) {
   const [nextOccurrence] = getNextOccurrences(slots, classDates[classDates.length - 1], 1);
   const nextDueDate = nextOccurrence.date;
 
-  const planValue = enrollment.customValue ?? enrollment.plan.value;
-  const finalAmount = amount != null ? amount : (planValue / enrollment.plan.classesIncluded) * classesCount;
+  // The plan can end up deleted while an enrollment still references it — without
+  // it (and no explicit amount override) there's no way to compute what's owed,
+  // since classesIncluded only ever comes from the plan.
+  if (!enrollment.plan && amount == null) {
+    throw new Error('Enrollment plan missing');
+  }
+
+  const finalAmount =
+    amount != null ? amount : ((enrollment.customValue ?? enrollment.plan.value) / enrollment.plan.classesIncluded) * classesCount;
 
   const payment = await Payment.create({
     enrollment: enrollmentId,

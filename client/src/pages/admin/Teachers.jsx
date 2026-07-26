@@ -83,7 +83,7 @@ export default function Teachers() {
                   <td>{item.phone} {item.email}</td>
                   <td>
                     {item.rates.map((r, i) => (
-                      <div key={i}>{r.instrument.name || instrumentName(r.instrument)}: {r.percentage}%</div>
+                      <div key={i}>{r.instrument?.name || instrumentName(r.instrument) || 'Instrumento eliminado'}: {r.percentage}%</div>
                     ))}
                   </td>
                 </tr>
