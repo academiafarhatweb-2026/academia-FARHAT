@@ -18,7 +18,7 @@ async function attachEnrollmentSummary(student) {
       const { status, nextDueDate } = await computeStatus(e);
       return {
         _id: e._id,
-        instrumentNames: e.classes.map((c) => c.instrument.name).join(', '),
+        instrumentNames: [...new Set(e.classes.map((c) => c.instrument?.name).filter(Boolean))].join(', '),
         teacherNames: [...new Set(e.classes.map((c) => c.teacher?.name).filter(Boolean))].join(', '),
         schedule: e.classes.flatMap((c) => c.slots),
         expirationStatus: status,
