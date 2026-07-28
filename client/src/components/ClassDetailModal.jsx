@@ -14,6 +14,7 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
   const [addStudentId, setAddStudentId] = useState('');
   const [addPlanId, setAddPlanId] = useState('');
   const [error, setError] = useState('');
+  const [addingStudent, setAddingStudent] = useState(false);
   const confirm = useConfirm();
 
   useEffect(() => {
@@ -69,7 +70,8 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
   async function handleAddStudent(e) {
     e.preventDefault();
     setError('');
-    if (!addStudentId || !addPlanId) return;
+    if (!addStudentId || !addPlanId || addingStudent) return;
+    setAddingStudent(true);
     try {
       await enrollmentsApi.create({
         student: addStudentId,
@@ -84,6 +86,8 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
       onChanged();
     } catch (err) {
       setError(err.response?.data?.message || 'No se pudo inscribir al alumno');
+    } finally {
+      setAddingStudent(false);
     }
   }
 
@@ -133,19 +137,21 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
                       </button>
                     </li>
                   ))}
-                  {enrolledInClass.length === 0 && <li className="text-sm text-ink/60">Todavia no hay alumnos en esta clase.</li>}
+                  {enrolledInClass.length === 0 && <li className="text-sm text-ink/60">Todavía no hay alumnos en esta clase.</li>}
                 </ul>
 
                 <form onSubmit={handleAddStudent} className="flex-row">
-                  <select value={addStudentId} onChange={(e) => setAddStudentId(e.target.value)}>
+                  <select value={addStudentId} onChange={(e) => setAddStudentId(e.target.value)} required>
                     <option value="">Seleccione alumno</option>
                     {availableStudents.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
                   </select>
-                  <select value={addPlanId} onChange={(e) => setAddPlanId(e.target.value)}>
+                  <select value={addPlanId} onChange={(e) => setAddPlanId(e.target.value)} required>
                     <option value="">Seleccione precio</option>
                     {plans.map((p) => <option key={p._id} value={p._id}>{p.name}</option>)}
                   </select>
-                  <button className="btn secondary" type="submit">+ Agregar alumno</button>
+                  <button className="btn secondary" type="submit" disabled={addingStudent}>
+                    {addingStudent ? 'Agregando...' : '+ Agregar alumno'}
+                  </button>
                 </form>
                 {error && <p className="error">{error}</p>}
               </div>
