@@ -40,7 +40,7 @@ export default function Classes() {
   async function handleDelete() {
     const ok = await confirm({
       title: 'Eliminar clase',
-      message: `Esto elimina "${selected?.instrument?.name} - ${selected?.teacher?.name}" de ese dia. Continuar?`,
+      message: `Esto elimina "${selected?.instrument?.name} - ${selected?.teacher?.name}" de ese día. Continuar?`,
       confirmLabel: 'Eliminar',
       danger: true,
     });
@@ -104,7 +104,7 @@ export default function Classes() {
       ) : (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Instrumento</th><th>Profesor</th><th>Dias</th></tr></thead>
+            <thead><tr><th>Instrumento</th><th>Profesor</th><th>Días</th></tr></thead>
             <tbody>
               {rows.map((group, gi) => (
                 <Fragment key={gi}>
