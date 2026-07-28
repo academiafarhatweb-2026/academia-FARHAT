@@ -8,7 +8,7 @@ function countDatesInRange(dates, start, end) {
 
 // Attributes each enrollment to the teacher/instrument of its first fixed class.
 // Assumes an enrollment's classes share one teacher+instrument (typical case in this academy).
-async function generateSettlement(teacher, periodMonth, periodYear) {
+async function computeSettlementLines(teacher, periodMonth, periodYear) {
   const start = new Date(periodYear, periodMonth - 1, 1);
   const end = new Date(periodYear, periodMonth, 1);
 
@@ -56,6 +56,12 @@ async function generateSettlement(teacher, periodMonth, periodYear) {
     });
   }
 
+  return { lines, totalAmount };
+}
+
+async function generateSettlement(teacher, periodMonth, periodYear) {
+  const { lines, totalAmount } = await computeSettlementLines(teacher, periodMonth, periodYear);
+
   const settlement = await Settlement.findOneAndUpdate(
     { teacher: teacher._id, periodMonth, periodYear },
     { lines, totalAmount, generatedAt: new Date() },
@@ -65,4 +71,4 @@ async function generateSettlement(teacher, periodMonth, periodYear) {
   return settlement;
 }
 
-module.exports = { generateSettlement };
+module.exports = { generateSettlement, computeSettlementLines };
