@@ -313,6 +313,21 @@
   .no-print {
     display: none !important;
   }
+
+  .modal-overlay {
+    position: static;
+    overflow: visible;
+    background: none;
+    backdrop-filter: none;
+    padding: 0;
+  }
+
+  .modal-panel {
+    max-width: none;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+  }
 }
 
 .flex-row {
