@@ -3,11 +3,12 @@ import { teachersApi, instrumentsApi } from '../../api/catalog';
 import { useCrudModal } from '../../hooks/useCrudModal';
 import Modal from '../../components/Modal';
 import { useConfirm } from '../../context/ConfirmContext';
+import { PERSON_NAME_PATTERN, PERSON_NAME_TITLE, PHONE_PATTERN, PHONE_TITLE, PHONE_MAXLENGTH, EMAIL_PATTERN, EMAIL_TITLE } from '../../utils/validation';
 
 const emptyForm = { name: '', phone: '', email: '', rates: [] };
 
 export default function Teachers() {
-  const { items, loading, selectedId, setSelectedId, selected, mode, error, openCreate, openEdit, close, submit, removeSelected } =
+  const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, removeSelected } =
     useCrudModal(teachersApi);
   const [instruments, setInstruments] = useState([]);
   const [form, setForm] = useState(emptyForm);
@@ -105,33 +106,69 @@ export default function Teachers() {
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="teacherName">Nombre</label>
-              <input id="teacherName" value={form.name} onChange={(e) => setField('name', e.target.value)} />
+              <input
+                id="teacherName"
+                value={form.name}
+                onChange={(e) => setField('name', e.target.value)}
+                required
+                minLength={2}
+                maxLength={80}
+                pattern={PERSON_NAME_PATTERN}
+                title={PERSON_NAME_TITLE}
+              />
             </div>
             <div className="field">
-              <label htmlFor="teacherPhone">Telefono</label>
-              <input id="teacherPhone" value={form.phone} onChange={(e) => setField('phone', e.target.value)} />
+              <label htmlFor="teacherPhone">Teléfono</label>
+              <input
+                id="teacherPhone"
+                type="tel"
+                value={form.phone}
+                onChange={(e) => setField('phone', e.target.value)}
+                maxLength={PHONE_MAXLENGTH}
+                pattern={PHONE_PATTERN}
+                title={PHONE_TITLE}
+              />
             </div>
             <div className="field">
               <label htmlFor="teacherEmail">Email</label>
-              <input id="teacherEmail" value={form.email} onChange={(e) => setField('email', e.target.value)} />
+              <input
+                id="teacherEmail"
+                type="email"
+                value={form.email}
+                onChange={(e) => setField('email', e.target.value)}
+                maxLength={100}
+                pattern={EMAIL_PATTERN}
+                title={EMAIL_TITLE}
+              />
             </div>
 
             <div className="field">
-              <label>Comision por instrumento (%)</label>
+              <label>Comisión por instrumento (%)</label>
               {form.rates.map((rate, i) => (
                 <div key={i} className="flex-row" style={{ marginBottom: 6 }}>
                   <select value={rate.instrument} onChange={(e) => updateRate(i, 'instrument', e.target.value)}>
                     {instruments.map((inst) => <option key={inst._id} value={inst._id}>{inst.name}</option>)}
                   </select>
-                  <input type="number" style={{ width: 80 }} value={rate.percentage} onChange={(e) => updateRate(i, 'percentage', e.target.value)} />
+                  <input
+                    type="number"
+                    style={{ width: 80 }}
+                    value={rate.percentage}
+                    onChange={(e) => updateRate(i, 'percentage', e.target.value)}
+                    required
+                    min={0}
+                    max={100}
+                    step="0.01"
+                  />
                   <button type="button" className="btn danger" onClick={() => removeRate(i)}>Quitar</button>
                 </div>
               ))}
-              <button type="button" className="btn secondary" onClick={addRate}>+ Agregar comision</button>
+              <button type="button" className="btn secondary" onClick={addRate}>+ Agregar comisión</button>
             </div>
 
             {error && <p className="error mb-3">{error}</p>}
-            <button className="btn" type="submit">Guardar</button>
+            <button className="btn" type="submit" disabled={submitting}>
+              {submitting ? 'Guardando...' : 'Guardar'}
+            </button>
           </form>
         </Modal>
       )}
