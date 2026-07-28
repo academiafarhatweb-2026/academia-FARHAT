@@ -5,7 +5,7 @@ import Logo from '../../components/Logo';
 import { useConfirm } from '../../context/ConfirmContext';
 
 const links = [
-  { to: '/admin/configuracion', label: 'Configuracion' },
+  { to: '/admin/configuracion', label: 'Configuración' },
   { to: '/admin/alumnos', label: 'Alumnos' },
   { to: '/admin/profesores', label: 'Profesores' },
   { to: '/admin/clases', label: 'Clases' },
@@ -27,7 +27,7 @@ export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   async function handleLogout() {
-    const ok = await confirm({ title: 'Cerrar sesion', message: 'Vas a salir de tu cuenta. Continuar?', confirmLabel: 'Salir' });
+    const ok = await confirm({ title: 'Cerrar sesión', message: 'Vas a salir de tu cuenta. Continuar?', confirmLabel: 'Salir' });
     if (!ok) return;
     await logout();
     navigate('/login');
@@ -40,7 +40,7 @@ export default function AdminLayout() {
   return (
     <div className="admin-shell">
       <div className="admin-mobile-bar no-print">
-        <button type="button" className="btn secondary" onClick={() => setSidebarOpen(true)} aria-label="Abrir menu">
+        <button type="button" className="btn secondary" onClick={() => setSidebarOpen(true)} aria-label="Abrir menú">
           <MenuIcon className="h-5 w-5" />
         </button>
         <span className="flex items-center gap-2 font-display font-semibold text-ink">

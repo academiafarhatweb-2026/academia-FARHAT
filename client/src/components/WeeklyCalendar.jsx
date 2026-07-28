@@ -16,7 +16,7 @@ function rateFor(teacher, instrumentId) {
 }
 
 // Groups the flat FixedClass list into one row per teacher+instrument, matching
-// the paper schedule (profesor | % | instrumento | dias) instead of a day/hour
+// the paper schedule (profesor | % | instrumento | días) instead of a day/hour
 // grid — each day column just lists the hour(s) that combination meets.
 // A class can reference a teacher/instrument that was since deleted — those
 // show up as "Profesor eliminado" / "Instrumento eliminado" instead of crashing.

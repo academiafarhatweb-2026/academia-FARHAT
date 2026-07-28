@@ -6,4 +6,5 @@ export const settlementsApi = {
   list: async (params) => (await http.get('/settlements', { params })).data,
   getOne: async (id) => (await http.get(`/settlements/${id}`)).data,
   update: async (id, data) => (await http.put(`/settlements/${id}`, data)).data,
+  remove: async (id) => (await http.delete(`/settlements/${id}`)).data,
 };

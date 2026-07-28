@@ -72,11 +72,11 @@ const REASONS = [
     n: '01',
     icon: GraduateIcon,
     title: 'Profesores especializados',
-    text: 'Cada instrumento lo dicta alguien formado especificamente en ese estilo y esa tecnica.',
+    text: 'Cada instrumento lo dicta alguien formado específicamente en ese estilo y esa técnica.',
   },
-  { n: '02', icon: ClockIcon, title: 'Horarios flexibles', text: 'Turnos durante toda la semana para acomodarnos a tu rutina, no al reves.' },
-  { n: '03', icon: TempoIcon, title: 'Clases a tu ritmo', text: 'Primera vez con un instrumento o ya con experiencia: arrancamos desde donde estas.' },
-  { n: '04', icon: HeartIcon, title: 'Ambiente cercano', text: 'Un lugar para disfrutar la musica, sin presion y con acompanamiento real.' },
+  { n: '02', icon: ClockIcon, title: 'Horarios flexibles', text: 'Turnos durante toda la semana para acomodarnos a tu rutina, no al revés.' },
+  { n: '03', icon: TempoIcon, title: 'Clases a tu ritmo', text: 'Primera vez con un instrumento o ya con experiencia: arrancamos desde donde estás.' },
+  { n: '04', icon: HeartIcon, title: 'Ambiente cercano', text: 'Un lugar para disfrutar la música, sin presión y con acompañamiento real.' },
 ];
 
 export default function Home() {
@@ -134,12 +134,12 @@ export default function Home() {
 
         <div className="container relative py-20">
           <div className="max-w-xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Academia de musica</span>
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Academia de música</span>
             <h1 className="mt-5 font-display text-5xl font-semibold leading-[1.05] text-ivory sm:text-6xl">
-              Encontra tu <span className="text-gold">sonido</span>
+              Encontrá tu <span className="text-gold">sonido</span>
             </h1>
             <p className="mt-6 max-w-md text-lg text-ivory/70">
-              Guitarra, canto, bateria, teclado, violin, bajo y mas. Clases pensadas para que aprendas a tu ritmo,
+              Guitarra, canto, batería, teclado, violín, bajo y más. Clases pensadas para que aprendas a tu ritmo,
               con profesores que se dedican a esto de verdad.
             </p>
             <div className="mt-9 flex flex-wrap gap-4">
@@ -308,7 +308,7 @@ export default function Home() {
                   </a>
                 )}
                 {!content?.instagram && !content?.facebook && !content?.whatsappNumber && (
-                  <p className="text-sm text-ivory/50">Proximamente mas formas de contactarnos.</p>
+                  <p className="text-sm text-ivory/50">Próximamente más formas de contactarnos.</p>
                 )}
               </div>
             </div>

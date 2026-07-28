@@ -27,7 +27,7 @@ function buildReceipt(payment, enrollment) {
 async function create(req, res) {
   const { enrollmentId, classesCount, amount } = req.body;
   if (!enrollmentId || !classesCount) {
-    return res.status(400).json({ message: 'La inscripcion y la cantidad de clases son requeridas' });
+    return res.status(400).json({ message: 'La inscripción y la cantidad de clases son requeridas' });
   }
 
   let result;
@@ -35,10 +35,10 @@ async function create(req, res) {
     result = await createPayment({ enrollmentId, classesCount, amount });
   } catch (err) {
     if (err.message === 'Enrollment not found') {
-      return res.status(404).json({ message: 'No se encontro la inscripcion' });
+      return res.status(404).json({ message: 'No se encontró la inscripción' });
     }
     if (err.message === 'Enrollment plan missing') {
-      return res.status(400).json({ message: 'Esta inscripcion no tiene un plan valido. Cargala de nuevo o indica un monto manual.' });
+      return res.status(400).json({ message: 'Esta inscripción no tiene un plan válido. Cargala de nuevo o indica un monto manual.' });
     }
     throw err;
   }
@@ -48,6 +48,15 @@ async function create(req, res) {
 async function listByEnrollment(req, res) {
   const payments = await Payment.find({ enrollment: req.params.enrollmentId }).sort({ createdAt: -1 });
   res.json(payments);
+}
+
+async function getReceipt(req, res) {
+  const payment = await Payment.findById(req.params.id).populate({
+    path: 'enrollment',
+    populate: [{ path: 'student' }, { path: 'classes', populate: 'instrument' }],
+  });
+  if (!payment || !payment.enrollment) return res.status(404).json({ message: 'No encontrado' });
+  res.json(buildReceipt(payment, payment.enrollment));
 }
 
 async function list(req, res) {
@@ -88,4 +97,4 @@ async function remove(req, res) {
   res.json({ message: 'Eliminado' });
 }
 
-module.exports = { create, list, listByEnrollment, update, remove };
+module.exports = { create, list, listByEnrollment, getReceipt, update, remove };

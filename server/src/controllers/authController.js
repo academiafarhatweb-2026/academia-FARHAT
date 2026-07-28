@@ -13,14 +13,14 @@ const cookieOptions = {
 async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) {
-    return res.status(400).json({ message: 'El email y la contrasena son requeridos' });
+    return res.status(400).json({ message: 'El email y la contraseña son requeridos' });
   }
 
   const user = await User.findOne({ email: email.toLowerCase().trim() });
-  if (!user || !user.active || !user.passwordHash) return res.status(401).json({ message: 'Credenciales invalidas' });
+  if (!user || !user.active || !user.passwordHash) return res.status(401).json({ message: 'Credenciales inválidas' });
 
   const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) return res.status(401).json({ message: 'Credenciales invalidas' });
+  if (!valid) return res.status(401).json({ message: 'Credenciales inválidas' });
 
   const token = signToken(user);
   res.cookie('token', token, cookieOptions);
@@ -42,7 +42,7 @@ async function studentLogin(req, res) {
 
 async function logout(req, res) {
   res.clearCookie('token', cookieOptions);
-  res.json({ message: 'Sesion cerrada' });
+  res.json({ message: 'Sesión cerrada' });
 }
 
 async function me(req, res) {

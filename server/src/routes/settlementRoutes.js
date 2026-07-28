@@ -10,5 +10,6 @@ router.get('/', asyncHandler(settlementController.list));
 router.get('/:id', asyncHandler(settlementController.getOne));
 router.post('/generate', asyncHandler(settlementController.generate));
 router.put('/:id', asyncHandler(settlementController.update));
+router.delete('/:id', asyncHandler(settlementController.remove));
 
 module.exports = router;

@@ -10,7 +10,7 @@ import WhatsappButton from '../../components/WhatsappButton';
 import { useConfirm } from '../../context/ConfirmContext';
 
 const STATUS_INFO = {
-  active: { label: 'Al dia', className: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' },
+  active: { label: 'Al día', className: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' },
   expiring_soon: { label: 'Por vencer', className: 'border-gold/40 bg-gold/15 text-gold' },
   expired: { label: 'Vencido', className: 'border-wine/50 bg-wine/25 text-rose-200' },
   no_payment: { label: 'Sin pagos', className: 'border-ivory/20 bg-ivory/10 text-ivory/60' },
@@ -55,7 +55,7 @@ export default function StudentProfile() {
   }, []);
 
   async function handleLogout() {
-    const ok = await confirm({ title: 'Cerrar sesion', message: 'Vas a salir de tu cuenta. Continuar?', confirmLabel: 'Salir' });
+    const ok = await confirm({ title: 'Cerrar sesión', message: 'Vas a salir de tu cuenta. Continuar?', confirmLabel: 'Salir' });
     if (!ok) return;
     await logout();
     navigate('/');
@@ -99,18 +99,18 @@ export default function StudentProfile() {
                 <div>
                   <p className="font-display text-lg font-semibold text-ivory">
                     {expired.length > 0
-                      ? 'Tu inscripcion esta vencida'
-                      : 'Tu clase esta por vencer'}
+                      ? 'Tu inscripción está vencida'
+                      : 'Tu clase está por vencer'}
                   </p>
                   <p className="mt-1 text-sm text-ivory/70">
                     {expired.length > 0
-                      ? 'Escribinos para renovar y no perderte tus proximas clases.'
-                      : 'Falta poco para tu proximo vencimiento. Escribinos para renovar sin perder tu lugar.'}
+                      ? 'Escribinos para renovar y no perderte tus próximas clases.'
+                      : 'Falta poco para tu próximo vencimiento. Escribinos para renovar sin perder tu lugar.'}
                   </p>
                 </div>
                 <WhatsappButton
                   phone={whatsappNumber}
-                  message={`Hola! Quiero renovar mi inscripcion de ${urgent.instrumentNames || urgent.classes?.map((c) => c.instrument?.name).join(', ')}.`}
+                  message={`Hola! Quiero renovar mi inscripción de ${urgent.instrumentNames || urgent.classes?.map((c) => c.instrument?.name).join(', ')}.`}
                 />
               </div>
             )}
@@ -120,7 +120,7 @@ export default function StudentProfile() {
             {enrollments.length === 0 ? (
               <div className="rounded-2xl border border-ivory/10 bg-walnut p-8 text-center">
                 <p className="text-ivory/70">
-                  Aun no tenes clases asignadas. Cuando el admin te inscriba en una, la vas a ver aca.
+                  Aún no tenés clases asignadas. Cuando el admin te inscriba en una, la vas a ver acá.
                 </p>
               </div>
             ) : (
@@ -154,7 +154,7 @@ export default function StudentProfile() {
 
                       {e.nextDueDate && (
                         <p className="mt-4 border-t border-ivory/10 pt-3 text-sm text-ivory/60">
-                          Proxima fecha de pago:{' '}
+                          Próxima fecha de pago:{' '}
                           <span className="font-mono text-ivory">
                             {new Date(e.nextDueDate).toLocaleDateString('es-AR')}
                           </span>

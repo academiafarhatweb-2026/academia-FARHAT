@@ -6,6 +6,7 @@ import Modal from '../../components/Modal';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
 import { useConfirm } from '../../context/ConfirmContext';
+import { PERSON_NAME_PATTERN, PERSON_NAME_TITLE, PHONE_PATTERN, PHONE_TITLE, PHONE_MAXLENGTH, EMAIL_PATTERN, EMAIL_TITLE } from '../../utils/validation';
 
 const emptyForm = { name: '', email: '', phone: '', active: true };
 
@@ -22,7 +23,7 @@ function scheduleLines(schedule) {
 }
 
 export default function Students() {
-  const { items, loading, selectedId, setSelectedId, selected, mode, error, openCreate, openEdit, close, submit, update, reload } =
+  const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, update, reload } =
     useCrudModal(studentsApi);
   const [form, setForm] = useState(emptyForm);
   const confirm = useConfirm();
@@ -73,7 +74,7 @@ export default function Students() {
     <div>
       <h1>Alumnos</h1>
       <p className="mb-4 text-sm text-ink/60">
-        El alumno ingresa solo con su email, sin contrasena. Alcanza con cargarlo aca.
+        El alumno ingresa solo con su email, sin contraseña. Alcanza con cargarlo acá.
       </p>
 
       {loading ? (
@@ -81,7 +82,7 @@ export default function Students() {
       ) : (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Nombre</th><th>Email</th><th>Telefono</th><th>Estado</th><th>Pago</th><th>Clases</th><th>Vencimiento</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Pago</th><th>Clases</th><th>Vencimiento</th></tr></thead>
             <tbody>
               {items.map((item) => (
                 <tr key={item._id} className={item._id === selectedId ? 'selected' : ''} onClick={() => setSelectedId(item._id)} style={{ cursor: 'pointer' }}>
@@ -118,7 +119,7 @@ export default function Students() {
                         </div>
                       ))
                     ) : (
-                      <span className="text-xs text-ink/40">Sin inscripcion</span>
+                      <span className="text-xs text-ink/40">Sin inscripción</span>
                     )}
                   </td>
                   <td>
@@ -159,15 +160,40 @@ export default function Students() {
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="studentName">Nombre</label>
-              <input id="studentName" value={form.name} onChange={(e) => setField('name', e.target.value)} />
+              <input
+                id="studentName"
+                value={form.name}
+                onChange={(e) => setField('name', e.target.value)}
+                required
+                minLength={2}
+                maxLength={80}
+                pattern={PERSON_NAME_PATTERN}
+                title={PERSON_NAME_TITLE}
+              />
             </div>
             <div className="field">
               <label htmlFor="studentEmail">Email</label>
-              <input id="studentEmail" type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} />
+              <input
+                id="studentEmail"
+                type="email"
+                value={form.email}
+                onChange={(e) => setField('email', e.target.value)}
+                required
+                maxLength={100}
+                pattern={EMAIL_PATTERN}
+                title={EMAIL_TITLE}
+              />
             </div>
             <div className="field">
-              <label htmlFor="studentPhone">Telefono</label>
-              <input id="studentPhone" value={form.phone} onChange={(e) => setField('phone', e.target.value)} />
+              <label htmlFor="studentPhone">Teléfono</label>
+              <input
+                id="studentPhone"
+                value={form.phone}
+                onChange={(e) => setField('phone', e.target.value)}
+                maxLength={PHONE_MAXLENGTH}
+                pattern={PHONE_PATTERN}
+                title={PHONE_TITLE}
+              />
             </div>
             {mode === 'edit' && (
               <div className="field">
@@ -195,12 +221,14 @@ export default function Students() {
                     </div>
                   ))
                 ) : (
-                  <span className="text-xs text-ink/40">Sin inscripcion</span>
+                  <span className="text-xs text-ink/40">Sin inscripción</span>
                 )}
               </div>
             )}
             {error && <p className="error mb-3">{error}</p>}
-            <button className="btn" type="submit">Guardar</button>
+            <button className="btn" type="submit" disabled={submitting}>
+              {submitting ? 'Guardando...' : 'Guardar'}
+            </button>
           </form>
         </Modal>
       )}
