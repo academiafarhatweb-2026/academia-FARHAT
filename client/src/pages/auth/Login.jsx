@@ -78,7 +78,7 @@ function StudentLoginForm() {
       await loginStudent(email);
       navigate('/student');
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo iniciar sesion');
+      setError(err.response?.data?.message || 'No se pudo iniciar sesión');
     } finally {
       setLoading(false);
     }
@@ -88,7 +88,7 @@ function StudentLoginForm() {
     <form onSubmit={handleSubmit}>
       <div className="field">
         <label htmlFor="studentEmail">Tu email</label>
-        <input id="studentEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input id="studentEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={100} />
       </div>
       {error && <p className="error">{error}</p>}
       <button className="btn" type="submit" disabled={loading} style={{ width: '100%' }}>
@@ -114,7 +114,7 @@ function AdminLoginForm() {
       await login(email, password);
       navigate('/admin');
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo iniciar sesion');
+      setError(err.response?.data?.message || 'No se pudo iniciar sesión');
     } finally {
       setLoading(false);
     }
@@ -124,11 +124,19 @@ function AdminLoginForm() {
     <form onSubmit={handleSubmit}>
       <div className="field">
         <label htmlFor="adminEmail">Email</label>
-        <input id="adminEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input id="adminEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={100} />
       </div>
       <div className="field">
         <label htmlFor="adminPassword">Contraseña</label>
-        <input id="adminPassword" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <input
+          id="adminPassword"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          minLength={6}
+          maxLength={100}
+        />
       </div>
       {error && <p className="error">{error}</p>}
       <button className="btn" type="submit" disabled={loading} style={{ width: '100%' }}>

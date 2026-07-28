@@ -6,6 +6,7 @@ export const paymentsApi = {
   list: async () => (await http.get('/payments')).data,
   listByEnrollment: async (enrollmentId) =>
     (await http.get(`/payments/enrollment/${enrollmentId}`)).data,
+  getReceipt: async (id) => (await http.get(`/payments/${id}/receipt`)).data,
   update: async (id, data) => (await http.put(`/payments/${id}`, data)).data,
   remove: async (id) => (await http.delete(`/payments/${id}`)).data,
 };

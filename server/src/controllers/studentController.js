@@ -55,7 +55,7 @@ async function create(req, res) {
   }
 
   const existing = await User.findOne({ email: email.toLowerCase().trim() });
-  if (existing) return res.status(409).json({ message: 'Ese email ya esta en uso' });
+  if (existing) return res.status(409).json({ message: 'Ese email ya está en uso' });
 
   const student = await User.create({
     name,
@@ -74,7 +74,7 @@ async function update(req, res) {
   if (email) {
     const normalizedEmail = email.toLowerCase().trim();
     const existing = await User.findOne({ email: normalizedEmail, _id: { $ne: req.params.id } });
-    if (existing) return res.status(409).json({ message: 'Ese email ya esta en uso' });
+    if (existing) return res.status(409).json({ message: 'Ese email ya está en uso' });
     update.email = normalizedEmail;
   }
 

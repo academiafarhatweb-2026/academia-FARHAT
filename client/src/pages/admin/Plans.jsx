@@ -7,7 +7,7 @@ import { useConfirm } from '../../context/ConfirmContext';
 const emptyForm = { name: '', value: '', classesIncluded: '' };
 
 export default function Plans() {
-  const { items, loading, selectedId, setSelectedId, selected, mode, error, openCreate, openEdit, close, submit, removeSelected } =
+  const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, removeSelected } =
     useCrudModal(plansApi);
   const [form, setForm] = useState(emptyForm);
   const confirm = useConfirm();
@@ -36,6 +36,7 @@ export default function Plans() {
 
   function handleSubmit(e) {
     e.preventDefault();
+    if (!form.name.trim() || form.value === '' || form.classesIncluded === '') return;
     submit({ name: form.name, value: Number(form.value), classesIncluded: Number(form.classesIncluded) });
   }
 
@@ -77,18 +78,20 @@ export default function Plans() {
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="planName">Nombre</label>
-              <input id="planName" value={form.name} onChange={(e) => setField('name', e.target.value)} />
+              <input id="planName" value={form.name} onChange={(e) => setField('name', e.target.value)} required minLength={2} maxLength={40} />
             </div>
             <div className="field">
               <label htmlFor="planValue">Valor ($)</label>
-              <input id="planValue" type="number" value={form.value} onChange={(e) => setField('value', e.target.value)} />
+              <input id="planValue" type="number" value={form.value} onChange={(e) => setField('value', e.target.value)} required min={0} step="0.01" />
             </div>
             <div className="field">
               <label htmlFor="planClasses">Clases incluidas</label>
-              <input id="planClasses" type="number" value={form.classesIncluded} onChange={(e) => setField('classesIncluded', e.target.value)} />
+              <input id="planClasses" type="number" value={form.classesIncluded} onChange={(e) => setField('classesIncluded', e.target.value)} required min={1} step={1} />
             </div>
             {error && <p className="error mb-3">{error}</p>}
-            <button className="btn" type="submit">Guardar</button>
+            <button className="btn" type="submit" disabled={submitting}>
+              {submitting ? 'Guardando...' : 'Guardar'}
+            </button>
           </form>
         </Modal>
       )}

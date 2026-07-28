@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useCrud } from './useCrud';
 
 function extractMessage(err) {
@@ -12,6 +12,11 @@ export function useCrudModal(api) {
   const [selectedId, setSelectedId] = useState(null);
   const [mode, setMode] = useState(null); // 'create' | 'edit' | null
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  // A ref lock, not just the submitting state: state updates are batched/async,
+  // so two clicks fired back-to-back before the first render flushes could both
+  // read the old "not submitting" value and both slip through.
+  const submittingRef = useRef(false);
 
   const selected = crud.items.find((i) => i._id === selectedId) || null;
 
@@ -32,6 +37,11 @@ export function useCrudModal(api) {
   }
 
   async function submit(data) {
+    // Guards against a double-click (or double form-submit event) firing two
+    // create/update requests before the modal has a chance to close.
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     setError('');
     try {
       if (mode === 'edit' && selectedId) {
@@ -42,19 +52,27 @@ export function useCrudModal(api) {
       close();
     } catch (err) {
       setError(extractMessage(err));
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
 
   async function removeSelected() {
-    if (!selectedId) return;
+    if (!selectedId || submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
     setError('');
     try {
       await crud.remove(selectedId);
       setSelectedId(null);
     } catch (err) {
       setError(extractMessage(err));
+    } finally {
+      submittingRef.current = false;
+      setSubmitting(false);
     }
   }
 
-  return { ...crud, selectedId, setSelectedId, selected, mode, error, openCreate, openEdit, close, submit, removeSelected };
+  return { ...crud, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, removeSelected };
 }

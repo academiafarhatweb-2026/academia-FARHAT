@@ -14,11 +14,11 @@ const DAY = { LUNES: 1, MARTES: 2, MIERCOLES: 3, JUEVES: 4, VIERNES: 5, SABADO: 
 // in the real schedule data.
 const INSTRUMENT_NAMES = [
   'GUITARRA',
-  'BATERIA',
+  'BATERÍA',
   'TECLADO',
-  'VIOLIN',
+  'VIOLÍN',
   'CANTO',
-  'GUITARRA ELECTRICA',
+  'GUITARRA ELÉCTRICA',
   'UKELELE',
   'BAJO',
 ];
@@ -31,7 +31,7 @@ const TEACHERS = [
     name: 'Hernan Ruiz',
     rates: [
       { instrument: 'GUITARRA', percentage: 40 },
-      { instrument: 'BATERIA', percentage: 45 },
+      { instrument: 'BATERÍA', percentage: 45 },
     ],
     classes: [
       { instrument: 'GUITARRA', day: 'LUNES', startHour: 17 },
@@ -40,12 +40,12 @@ const TEACHERS = [
       { instrument: 'GUITARRA', day: 'JUEVES', startHour: 17 },
       { instrument: 'GUITARRA', day: 'JUEVES', startHour: 19 },
       { instrument: 'GUITARRA', day: 'VIERNES', startHour: 19 },
-      { instrument: 'BATERIA', day: 'MARTES', startHour: 17 },
-      { instrument: 'BATERIA', day: 'MARTES', startHour: 19 },
-      { instrument: 'BATERIA', day: 'MIERCOLES', startHour: 17 },
-      { instrument: 'BATERIA', day: 'MIERCOLES', startHour: 19 },
-      { instrument: 'BATERIA', day: 'VIERNES', startHour: 17 },
-      { instrument: 'BATERIA', day: 'SABADO', startHour: 11 }, // visto en la captura, no en el PDF
+      { instrument: 'BATERÍA', day: 'MARTES', startHour: 17 },
+      { instrument: 'BATERÍA', day: 'MARTES', startHour: 19 },
+      { instrument: 'BATERÍA', day: 'MIERCOLES', startHour: 17 },
+      { instrument: 'BATERÍA', day: 'MIERCOLES', startHour: 19 },
+      { instrument: 'BATERÍA', day: 'VIERNES', startHour: 17 },
+      { instrument: 'BATERÍA', day: 'SABADO', startHour: 11 }, // visto en la captura, no en el PDF
     ],
   },
   {
@@ -86,11 +86,11 @@ const TEACHERS = [
   },
   {
     name: 'Lourdes Ahumada',
-    rates: [{ instrument: 'VIOLIN', percentage: 35 }],
+    rates: [{ instrument: 'VIOLÍN', percentage: 35 }],
     classes: [
-      { instrument: 'VIOLIN', day: 'VIERNES', startHour: 17 },
-      { instrument: 'VIOLIN', day: 'VIERNES', startHour: 19 },
-      { instrument: 'VIOLIN', day: 'SABADO', startHour: 11 },
+      { instrument: 'VIOLÍN', day: 'VIERNES', startHour: 17 },
+      { instrument: 'VIOLÍN', day: 'VIERNES', startHour: 19 },
+      { instrument: 'VIOLÍN', day: 'SABADO', startHour: 11 },
     ],
   },
   {

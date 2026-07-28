@@ -41,6 +41,7 @@ export default function Enrollments() {
     submit,
     update,
     reload,
+    submitting,
   } = useCrudModal(enrollmentsApi);
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
@@ -101,8 +102,8 @@ export default function Enrollments() {
   async function handleHardDelete() {
     if (!selected) return;
     const ok = await confirm({
-      title: 'Eliminar inscripcion',
-      message: `Esto elimina para siempre la inscripcion de ${selected.student?.name}, sin poder deshacerlo. Continuar?`,
+      title: 'Eliminar inscripción',
+      message: `Esto elimina para siempre la inscripción de ${selected.student?.name}, sin poder deshacerlo. Continuar?`,
       confirmLabel: 'Eliminar',
       danger: true,
     });
@@ -121,7 +122,7 @@ export default function Enrollments() {
       ) : (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Alumno</th><th>Precio</th><th>Clases</th><th>Vencimiento</th><th>Inscripcion</th><th></th></tr></thead>
+            <thead><tr><th>Alumno</th><th>Precio</th><th>Clases</th><th>Vencimiento</th><th>Inscripción</th><th></th></tr></thead>
             <tbody>
               {items.map((e) => (
                 <tr key={e._id} className={e._id === selectedId ? 'selected' : ''} onClick={() => setSelectedId(e._id)} style={{ cursor: 'pointer' }}>
@@ -161,13 +162,13 @@ export default function Enrollments() {
       )}
 
       <div className="flex-row mt-16">
-        <button className="btn" onClick={openCreate}>Nueva inscripcion</button>
+        <button className="btn" onClick={openCreate}>Nueva inscripción</button>
         <button className="btn secondary" onClick={openEdit} disabled={!selectedId}>Modificar</button>
         <button className="btn danger" onClick={handleHardDelete} disabled={!selectedId}>Eliminar definitivamente</button>
       </div>
 
       {mode && (
-        <Modal title={mode === 'edit' ? 'Modificar inscripcion' : 'Nueva inscripcion'} onClose={close}>
+        <Modal title={mode === 'edit' ? 'Modificar inscripción' : 'Nueva inscripción'} onClose={close}>
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="enrollStudent">Alumno</label>
@@ -176,6 +177,7 @@ export default function Enrollments() {
                 value={form.student}
                 disabled={mode === 'edit'}
                 onChange={(e) => setForm((f) => ({ ...f, student: e.target.value }))}
+                required
               >
                 <option value="">Seleccione un alumno</option>
                 {students.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
@@ -192,6 +194,7 @@ export default function Enrollments() {
                   const chosenPlan = plans.find((p) => p._id === planId);
                   setForm((f) => ({ ...f, plan: planId, customValue: chosenPlan ? chosenPlan.value : f.customValue }));
                 }}
+                required
               >
                 <option value="">Seleccione cantidad de clases</option>
                 {plans.map((p) => <option key={p._id} value={p._id}>{p.name} - {p.classesIncluded} clases</option>)}
@@ -205,12 +208,21 @@ export default function Enrollments() {
                 type="number"
                 value={form.customValue}
                 onChange={(e) => setForm((f) => ({ ...f, customValue: e.target.value }))}
+                required
+                min={0}
+                step="0.01"
               />
             </div>
 
             <div className="field">
-              <label htmlFor="enrollDate">Fecha de inscripcion</label>
-              <input id="enrollDate" type="date" value={form.enrollmentDate} onChange={(e) => setForm((f) => ({ ...f, enrollmentDate: e.target.value }))} />
+              <label htmlFor="enrollDate">Fecha de inscripción</label>
+              <input
+                id="enrollDate"
+                type="date"
+                value={form.enrollmentDate}
+                onChange={(e) => setForm((f) => ({ ...f, enrollmentDate: e.target.value }))}
+                required
+              />
             </div>
 
             <div className="field">
@@ -236,7 +248,9 @@ export default function Enrollments() {
             </div>
 
             {(formError || error) && <p className="error mb-3">{formError || error}</p>}
-            <button className="btn" type="submit">{mode === 'edit' ? 'Guardar' : 'Inscribir'}</button>
+            <button className="btn" type="submit" disabled={submitting}>
+              {submitting ? 'Guardando...' : mode === 'edit' ? 'Guardar' : 'Inscribir'}
+            </button>
           </form>
         </Modal>
       )}
