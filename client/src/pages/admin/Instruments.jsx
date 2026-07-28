@@ -6,7 +6,7 @@ import { useConfirm } from '../../context/ConfirmContext';
 
 export default function Instruments() {
   const crud = useCrudModal(instrumentsApi);
-  const { items, loading, selectedId, setSelectedId, selected, mode, error, openCreate, openEdit, close, submit, removeSelected } = crud;
+  const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, removeSelected } = crud;
   const confirm = useConfirm();
 
   const [name, setName] = useState('');
@@ -48,7 +48,7 @@ export default function Instruments() {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Nombre</th><th>Publico</th></tr>
+              <tr><th>Nombre</th><th>Público</th></tr>
             </thead>
             <tbody>
               {items.map((item) => (
@@ -79,7 +79,7 @@ export default function Instruments() {
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label htmlFor="name">Nombre</label>
-              <input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+              <input id="name" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={40} />
             </div>
             <div className="field">
               <label>
@@ -87,7 +87,9 @@ export default function Instruments() {
               </label>
             </div>
             {error && <p className="error mb-3">{error}</p>}
-            <button className="btn" type="submit">Guardar</button>
+            <button className="btn" type="submit" disabled={submitting}>
+              {submitting ? 'Guardando...' : 'Guardar'}
+            </button>
           </form>
         </Modal>
       )}
