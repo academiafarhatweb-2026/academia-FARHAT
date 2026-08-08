@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthStore } from '../../store/authStore';
 import { homeApi } from '../../api/home';
 import { assetUrl } from '../../utils/assetUrl';
 import Logo from '../../components/Logo';
+import { adminLoginSchema, studentLoginSchema } from '../../schemas';
 
 export default function Login() {
   const [mode, setMode] = useState('student'); // 'student' | 'admin'
@@ -66,31 +69,34 @@ export default function Login() {
 function StudentLoginForm() {
   const loginStudent = useAuthStore((s) => s.loginStudent);
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(studentLoginSchema), defaultValues: { email: '' } });
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
+  async function onValid(data) {
     setLoading(true);
     try {
-      await loginStudent(email);
+      await loginStudent(data.email.trim());
       navigate('/student');
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo iniciar sesión');
+      setError('root', { message: err.response?.data?.message || 'No se pudo iniciar sesión' });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit(onValid)} noValidate>
       <div className="field">
         <label htmlFor="studentEmail">Tu email</label>
-        <input id="studentEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={100} />
+        <input id="studentEmail" type="email" {...register('email')} />
+        {errors.email && <p className="error">{errors.email.message}</p>}
       </div>
-      {error && <p className="error">{error}</p>}
+      {errors.root && <p className="error">{errors.root.message}</p>}
       <button className="btn" type="submit" disabled={loading} style={{ width: '100%' }}>
         {loading ? 'Ingresando...' : 'Ingresar'}
       </button>
@@ -101,44 +107,39 @@ function StudentLoginForm() {
 function AdminLoginForm() {
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(adminLoginSchema), defaultValues: { email: '', password: '' } });
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    setError('');
+  async function onValid(data) {
     setLoading(true);
     try {
-      await login(email, password);
+      await login(data.email.trim(), data.password);
       navigate('/admin');
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo iniciar sesión');
+      setError('root', { message: err.response?.data?.message || 'No se pudo iniciar sesión' });
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit(onValid)} noValidate>
       <div className="field">
         <label htmlFor="adminEmail">Email</label>
-        <input id="adminEmail" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required maxLength={100} />
+        <input id="adminEmail" type="email" {...register('email')} />
+        {errors.email && <p className="error">{errors.email.message}</p>}
       </div>
       <div className="field">
         <label htmlFor="adminPassword">Contraseña</label>
-        <input
-          id="adminPassword"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={6}
-          maxLength={100}
-        />
+        <input id="adminPassword" type="password" {...register('password')} />
+        {errors.password && <p className="error">{errors.password.message}</p>}
       </div>
-      {error && <p className="error">{error}</p>}
+      {errors.root && <p className="error">{errors.root.message}</p>}
       <button className="btn" type="submit" disabled={loading} style={{ width: '100%' }}>
         {loading ? 'Ingresando...' : 'Ingresar'}
       </button>
