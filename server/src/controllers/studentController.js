@@ -1,44 +1,74 @@
 const User = require('../models/User');
 const Enrollment = require('../models/Enrollment');
-const { attachStatus: computeStatus } = require('../services/enrollmentStatusService');
+const Payment = require('../models/Payment');
+const { getExpirationStatus } = require('../services/expirationService');
 
 function omitPasswordHash(doc) {
   const { passwordHash, ...safe } = doc.toObject();
   return safe;
 }
 
-async function attachEnrollmentSummary(student) {
-  const enrollments = await Enrollment.find({ student: student._id }).populate({
+// Same per-enrollment status/summary shape as enrollmentStatusService.attachStatus,
+// but computed from data already fetched in bulk by list() below — doing this
+// one enrollment/payment at a time (N+1 queries) made /api/students take several
+// seconds once there were a couple dozen students, so list() batches it instead.
+async function list(req, res) {
+  const students = await User.find({ role: 'student' }).sort({ createdAt: -1 });
+  const studentIds = students.map((s) => s._id);
+
+  const enrollments = await Enrollment.find({ student: { $in: studentIds } }).populate({
     path: 'classes',
     populate: ['instrument', 'teacher'],
   });
+  const enrollmentIds = enrollments.map((e) => e._id);
 
-  const summary = await Promise.all(
-    enrollments.map(async (e) => {
-      const { status, nextDueDate } = await computeStatus(e);
-      return {
-        _id: e._id,
-        instrumentNames: [...new Set(e.classes.map((c) => c.instrument?.name).filter(Boolean))].join(', '),
-        teacherNames: [...new Set(e.classes.map((c) => c.teacher?.name).filter(Boolean))].join(', '),
-        schedule: e.classes.flatMap((c) => c.slots),
-        expirationStatus: status,
-        nextDueDate,
-        active: e.active,
-        paid: e.paid,
-      };
-    })
-  );
+  const payments = await Payment.find({ enrollment: { $in: enrollmentIds } }).sort({ createdAt: -1 });
+  const lastPaymentByEnrollment = new Map();
+  for (const p of payments) {
+    const key = p.enrollment.toString();
+    if (!lastPaymentByEnrollment.has(key)) lastPaymentByEnrollment.set(key, p); // sorted desc, so first hit wins
+  }
 
-  // Active enrollments, plus ones that auto-expired (real payment history) —
-  // but not dead, never-paid duplicates an admin cancelled outright.
-  const visible = summary.filter((e) => e.active !== false || e.nextDueDate);
+  const toExpireIds = [];
+  const studentIdsToExpire = new Set();
+  const entriesByStudent = new Map();
+  for (const e of enrollments) {
+    const lastPayment = lastPaymentByEnrollment.get(e._id.toString());
+    const status = getExpirationStatus(lastPayment?.nextDueDate);
+    if (status === 'expired' && e.active) {
+      toExpireIds.push(e._id);
+      studentIdsToExpire.add(e.student.toString());
+      e.active = false;
+    }
+    const key = e.student.toString();
+    if (!entriesByStudent.has(key)) entriesByStudent.set(key, []);
+    entriesByStudent.get(key).push({ enrollment: e, status, nextDueDate: lastPayment?.nextDueDate || null });
+  }
 
-  return { ...omitPasswordHash(student), enrollments: visible };
-}
+  if (toExpireIds.length > 0) {
+    await Enrollment.updateMany({ _id: { $in: toExpireIds } }, { active: false });
+    await User.updateMany({ _id: { $in: [...studentIdsToExpire] } }, { active: false });
+  }
 
-async function list(req, res) {
-  const students = await User.find({ role: 'student' }).sort({ createdAt: -1 });
-  const withSummary = await Promise.all(students.map(attachEnrollmentSummary));
+  const withSummary = students.map((student) => {
+    const entries = entriesByStudent.get(student._id.toString()) || [];
+    const summary = entries.map(({ enrollment: e, status, nextDueDate }) => ({
+      _id: e._id,
+      instrumentNames: [...new Set(e.classes.map((c) => c.instrument?.name).filter(Boolean))].join(', '),
+      teacherNames: [...new Set(e.classes.map((c) => c.teacher?.name).filter(Boolean))].join(', '),
+      schedule: e.classes.flatMap((c) => c.slots),
+      expirationStatus: status,
+      nextDueDate,
+      active: e.active,
+      paid: e.paid,
+    }));
+
+    // Active enrollments, plus ones that auto-expired (real payment history) —
+    // but not dead, never-paid duplicates an admin cancelled outright.
+    const visible = summary.filter((en) => en.active !== false || en.nextDueDate);
+    return { ...omitPasswordHash(student), enrollments: visible };
+  });
+
   res.json(withSummary);
 }
 
