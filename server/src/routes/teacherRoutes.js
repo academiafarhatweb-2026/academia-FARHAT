@@ -2,6 +2,7 @@ const Teacher = require('../models/Teacher');
 const Settlement = require('../models/Settlement');
 const createCrudController = require('../controllers/crudFactory');
 const buildCrudRouter = require('../utils/crudRouter');
+const { teacherValidators } = require('../validators/teacherValidators');
 
 const base = createCrudController(Teacher, ['rates.instrument']);
 
@@ -15,4 +16,7 @@ async function remove(req, res) {
   res.json({ message: 'Eliminado' });
 }
 
-module.exports = buildCrudRouter({ ...base, remove });
+module.exports = buildCrudRouter(
+  { ...base, remove },
+  { create: teacherValidators, update: teacherValidators }
+);

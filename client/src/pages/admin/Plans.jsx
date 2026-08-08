@@ -1,16 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { plansApi } from '../../api/catalog';
 import { useCrudModal } from '../../hooks/useCrudModal';
 import Modal from '../../components/Modal';
 import { useConfirm } from '../../context/ConfirmContext';
+import { planSchema } from '../../schemas';
 
-const emptyForm = { name: '', value: '', classesIncluded: '' };
+const emptyValues = { name: '', value: '', classesIncluded: '' };
 
 export default function Plans() {
   const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, removeSelected } =
     useCrudModal(plansApi);
-  const [form, setForm] = useState(emptyForm);
   const confirm = useConfirm();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(planSchema), defaultValues: emptyValues });
 
   async function handleDelete() {
     const ok = await confirm({
@@ -24,20 +33,14 @@ export default function Plans() {
 
   useEffect(() => {
     if (mode === 'edit' && selected) {
-      setForm({ name: selected.name, value: selected.value, classesIncluded: selected.classesIncluded });
+      reset({ name: selected.name, value: String(selected.value), classesIncluded: String(selected.classesIncluded) });
     } else if (mode === 'create') {
-      setForm(emptyForm);
+      reset(emptyValues);
     }
-  }, [mode, selected]);
+  }, [mode, selected, reset]);
 
-  function setField(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.name.trim() || form.value === '' || form.classesIncluded === '') return;
-    submit({ name: form.name, value: Number(form.value), classesIncluded: Number(form.classesIncluded) });
+  function onValid(data) {
+    submit({ name: data.name.trim(), value: Number(data.value), classesIncluded: Number(data.classesIncluded) });
   }
 
   return (
@@ -75,18 +78,21 @@ export default function Plans() {
 
       {mode && (
         <Modal title={mode === 'edit' ? 'Modificar plan' : 'Nuevo plan'} onClose={close}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onValid)} noValidate>
             <div className="field">
               <label htmlFor="planName">Nombre</label>
-              <input id="planName" value={form.name} onChange={(e) => setField('name', e.target.value)} required minLength={2} maxLength={40} />
+              <input id="planName" {...register('name')} />
+              {errors.name && <p className="error">{errors.name.message}</p>}
             </div>
             <div className="field">
               <label htmlFor="planValue">Valor ($)</label>
-              <input id="planValue" type="number" value={form.value} onChange={(e) => setField('value', e.target.value)} required min={0} step="0.01" />
+              <input id="planValue" type="number" step="0.01" {...register('value')} />
+              {errors.value && <p className="error">{errors.value.message}</p>}
             </div>
             <div className="field">
               <label htmlFor="planClasses">Clases incluidas</label>
-              <input id="planClasses" type="number" value={form.classesIncluded} onChange={(e) => setField('classesIncluded', e.target.value)} required min={1} step={1} />
+              <input id="planClasses" type="number" step="1" {...register('classesIncluded')} />
+              {errors.classesIncluded && <p className="error">{errors.classesIncluded.message}</p>}
             </div>
             {error && <p className="error mb-3">{error}</p>}
             <button className="btn" type="submit" disabled={submitting}>

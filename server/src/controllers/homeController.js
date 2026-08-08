@@ -3,7 +3,7 @@ const Instrument = require('../models/Instrument');
 const FixedClass = require('../models/FixedClass');
 
 async function buildPublicPayload(content) {
-  const publicInstruments = await Instrument.find({ isPublic: true }).sort({ name: 1 });
+  const publicInstruments = await Instrument.find({ isPublic: true }).sort({ order: 1, name: 1 });
   const publicInstrumentIds = new Set(publicInstruments.map((i) => i._id.toString()));
 
   const classes = await FixedClass.find({ active: true }).populate('instrument').populate('teacher');

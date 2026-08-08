@@ -1,16 +1,25 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { instrumentsApi } from '../../api/catalog';
 import { useCrudModal } from '../../hooks/useCrudModal';
 import Modal from '../../components/Modal';
 import { useConfirm } from '../../context/ConfirmContext';
+import { instrumentSchema } from '../../schemas';
+
+const emptyValues = { name: '', order: '', isPublic: true };
 
 export default function Instruments() {
-  const crud = useCrudModal(instrumentsApi);
-  const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, removeSelected } = crud;
+  const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, removeSelected } =
+    useCrudModal(instrumentsApi);
   const confirm = useConfirm();
 
-  const [name, setName] = useState('');
-  const [isPublic, setIsPublic] = useState(true);
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(instrumentSchema), defaultValues: emptyValues });
 
   async function handleDelete() {
     const ok = await confirm({
@@ -24,18 +33,18 @@ export default function Instruments() {
 
   useEffect(() => {
     if (mode === 'edit' && selected) {
-      setName(selected.name);
-      setIsPublic(selected.isPublic);
+      reset({ name: selected.name, order: selected.order ?? '', isPublic: selected.isPublic });
     } else if (mode === 'create') {
-      setName('');
-      setIsPublic(true);
+      reset(emptyValues);
     }
-  }, [mode, selected]);
+  }, [mode, selected, reset]);
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    submit({ name, isPublic });
+  function onValid(data) {
+    submit({
+      name: data.name.trim(),
+      isPublic: data.isPublic,
+      order: data.order === '' ? 0 : Number(data.order),
+    });
   }
 
   return (
@@ -48,7 +57,7 @@ export default function Instruments() {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Nombre</th><th>Público</th></tr>
+              <tr><th>Orden</th><th>Nombre</th><th>Público</th></tr>
             </thead>
             <tbody>
               {items.map((item) => (
@@ -58,11 +67,12 @@ export default function Instruments() {
                   onClick={() => setSelectedId(item._id)}
                   style={{ cursor: 'pointer' }}
                 >
+                  <td>{item.order ?? 0}</td>
                   <td>{item.name}</td>
                   <td>{item.isPublic ? 'Si' : 'No'}</td>
                 </tr>
               ))}
-              {items.length === 0 && <tr><td colSpan="2">Sin registros.</td></tr>}
+              {items.length === 0 && <tr><td colSpan="3">Sin registros.</td></tr>}
             </tbody>
           </table>
         </div>
@@ -76,14 +86,20 @@ export default function Instruments() {
 
       {mode && (
         <Modal title={mode === 'edit' ? 'Modificar instrumento' : 'Nuevo instrumento'} onClose={close}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onValid)} noValidate>
             <div className="field">
               <label htmlFor="name">Nombre</label>
-              <input id="name" value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={40} />
+              <input id="name" {...register('name')} />
+              {errors.name && <p className="error">{errors.name.message}</p>}
+            </div>
+            <div className="field">
+              <label htmlFor="order">Orden (menor número = aparece primero)</label>
+              <input id="order" type="number" min="0" step="1" {...register('order')} />
+              {errors.order && <p className="error">{errors.order.message}</p>}
             </div>
             <div className="field">
               <label>
-                <input type="checkbox" checked={isPublic} onChange={(e) => setIsPublic(e.target.checked)} /> Mostrar en el Home
+                <input type="checkbox" {...register('isPublic')} /> Mostrar en el Home
               </label>
             </div>
             {error && <p className="error mb-3">{error}</p>}
