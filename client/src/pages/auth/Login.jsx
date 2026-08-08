@@ -8,6 +8,42 @@ import { assetUrl } from '../../utils/assetUrl';
 import Logo from '../../components/Logo';
 import { adminLoginSchema, studentLoginSchema } from '../../schemas';
 
+function EyeIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M1.5 12S5 5 12 5s10.5 7 10.5 7-3.5 7-10.5 7S1.5 12 1.5 12Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function EyeOffIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M3 3l18 18M10.6 5.1C11.05 5.04 11.51 5 12 5c7 0 10.5 7 10.5 7-.6 1.2-1.66 2.87-3.24 4.32M6.6 6.6C3.86 8.4 1.5 12 1.5 12s3.5 7 10.5 7c1.62 0 3.02-.37 4.22-.94"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M9.9 9.9a3 3 0 0 0 4.2 4.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export default function Login() {
   const [mode, setMode] = useState('student'); // 'student' | 'admin'
   const [heroImage, setHeroImage] = useState(null);
@@ -108,6 +144,7 @@ function AdminLoginForm() {
   const login = useAuthStore((s) => s.login);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const {
     register,
     handleSubmit,
@@ -136,7 +173,22 @@ function AdminLoginForm() {
       </div>
       <div className="field">
         <label htmlFor="adminPassword">Contraseña</label>
-        <input id="adminPassword" type="password" {...register('password')} />
+        <div className="relative">
+          <input
+            id="adminPassword"
+            type={showPassword ? 'text' : 'password'}
+            className="w-full pr-10"
+            {...register('password')}
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute inset-y-0 right-0 flex w-9 items-center justify-center text-ink/40 transition hover:text-ink"
+            aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+          >
+            {showPassword ? <EyeOffIcon className="h-4.5 w-4.5" /> : <EyeIcon className="h-4.5 w-4.5" />}
+          </button>
+        </div>
         {errors.password && <p className="error">{errors.password.message}</p>}
       </div>
       {errors.root && <p className="error">{errors.root.message}</p>}
