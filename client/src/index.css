@@ -96,6 +96,13 @@
     @apply text-xs font-medium text-wine;
   }
 
+  /* Edge/IE add their own built-in reveal-password eye icon, which duplicates
+     the custom one in Login.jsx — hide the native one so only ours shows. */
+  input[type='password']::-ms-reveal,
+  input[type='password']::-ms-clear {
+    display: none;
+  }
+
   form.card-form {
     @apply mb-6 rounded-2xl border border-ink/10 bg-white p-5 shadow-sm sm:p-6;
   }
