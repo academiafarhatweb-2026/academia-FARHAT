@@ -1,4 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { studentsApi } from '../../api/catalog';
 import { enrollmentsApi } from '../../api/enrollments';
 import { useCrudModal } from '../../hooks/useCrudModal';
@@ -6,9 +8,9 @@ import Modal from '../../components/Modal';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
 import { useConfirm } from '../../context/ConfirmContext';
-import { PERSON_NAME_PATTERN, PERSON_NAME_TITLE, PHONE_PATTERN, PHONE_TITLE, PHONE_MAXLENGTH, EMAIL_PATTERN, EMAIL_TITLE } from '../../utils/validation';
+import { studentSchema } from '../../schemas';
 
-const emptyForm = { name: '', email: '', phone: '', active: true };
+const emptyValues = { name: '', email: '', phone: '', active: true };
 
 function scheduleLines(schedule) {
   const byDay = new Map();
@@ -25,25 +27,25 @@ function scheduleLines(schedule) {
 export default function Students() {
   const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, update, reload } =
     useCrudModal(studentsApi);
-  const [form, setForm] = useState(emptyForm);
   const confirm = useConfirm();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(studentSchema), defaultValues: emptyValues });
 
   useEffect(() => {
     if (mode === 'edit' && selected) {
-      setForm({ name: selected.name, email: selected.email, phone: selected.phone || '', active: selected.active !== false });
+      reset({ name: selected.name, email: selected.email, phone: selected.phone || '', active: selected.active !== false });
     } else if (mode === 'create') {
-      setForm(emptyForm);
+      reset(emptyValues);
     }
-  }, [mode, selected]);
+  }, [mode, selected, reset]);
 
-  function setField(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!form.name.trim() || !form.email.trim()) return;
-    submit(form);
+  function onValid(data) {
+    submit({ name: data.name.trim(), email: data.email.trim(), phone: data.phone.trim(), active: data.active });
   }
 
   async function toggleActive() {
@@ -157,48 +159,26 @@ export default function Students() {
 
       {mode && (
         <Modal title={mode === 'edit' ? 'Modificar alumno' : 'Nuevo alumno'} onClose={close}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onValid)} noValidate>
             <div className="field">
               <label htmlFor="studentName">Nombre</label>
-              <input
-                id="studentName"
-                value={form.name}
-                onChange={(e) => setField('name', e.target.value)}
-                required
-                minLength={2}
-                maxLength={80}
-                pattern={PERSON_NAME_PATTERN}
-                title={PERSON_NAME_TITLE}
-              />
+              <input id="studentName" {...register('name')} />
+              {errors.name && <p className="error">{errors.name.message}</p>}
             </div>
             <div className="field">
               <label htmlFor="studentEmail">Email</label>
-              <input
-                id="studentEmail"
-                type="email"
-                value={form.email}
-                onChange={(e) => setField('email', e.target.value)}
-                required
-                maxLength={100}
-                pattern={EMAIL_PATTERN}
-                title={EMAIL_TITLE}
-              />
+              <input id="studentEmail" type="email" {...register('email')} />
+              {errors.email && <p className="error">{errors.email.message}</p>}
             </div>
             <div className="field">
               <label htmlFor="studentPhone">Teléfono</label>
-              <input
-                id="studentPhone"
-                value={form.phone}
-                onChange={(e) => setField('phone', e.target.value)}
-                maxLength={PHONE_MAXLENGTH}
-                pattern={PHONE_PATTERN}
-                title={PHONE_TITLE}
-              />
+              <input id="studentPhone" type="tel" {...register('phone')} />
+              {errors.phone && <p className="error">{errors.phone.message}</p>}
             </div>
             {mode === 'edit' && (
               <div className="field">
                 <label htmlFor="studentActive">Estado</label>
-                <select id="studentActive" value={form.active ? 'true' : 'false'} onChange={(e) => setField('active', e.target.value === 'true')}>
+                <select id="studentActive" {...register('active', { setValueAs: (v) => v === 'true' })}>
                   <option value="true">Activo</option>
                   <option value="false">De baja</option>
                 </select>

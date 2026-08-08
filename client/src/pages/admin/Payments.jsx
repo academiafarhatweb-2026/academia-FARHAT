@@ -1,27 +1,42 @@
 import { Fragment, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { enrollmentsApi } from '../../api/enrollments';
 import { paymentsApi } from '../../api/payments';
 import { useConfirm } from '../../context/ConfirmContext';
 import Modal from '../../components/Modal';
+import { paymentCreateSchema, paymentEditSchema } from '../../schemas';
 
 export default function Payments() {
   const [searchParams] = useSearchParams();
   const [enrollments, setEnrollments] = useState([]);
   const [payments, setPayments] = useState([]);
   const [loadingPayments, setLoadingPayments] = useState(true);
-  const [enrollmentId, setEnrollmentId] = useState(searchParams.get('enrollmentId') || '');
-  const [classesCount, setClassesCount] = useState(4);
-  const [amount, setAmount] = useState('');
   const [receipt, setReceipt] = useState(null);
-  const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [editingPayment, setEditingPayment] = useState(null);
-  const [editForm, setEditForm] = useState({ amount: '', classesCount: '' });
   const [savingEdit, setSavingEdit] = useState(false);
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [loadingReceiptId, setLoadingReceiptId] = useState(null);
   const confirm = useConfirm();
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors },
+  } = useForm({
+    resolver: zodResolver(paymentCreateSchema),
+    defaultValues: { enrollmentId: searchParams.get('enrollmentId') || '', classesCount: '4', amount: '' },
+  });
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    formState: { errors: editErrors },
+  } = useForm({ resolver: zodResolver(paymentEditSchema), defaultValues: { amount: '', classesCount: '' } });
 
   function reloadPayments() {
     return paymentsApi.list().then((data) => {
@@ -35,26 +50,20 @@ export default function Payments() {
     reloadPayments();
   }, []);
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function onValid(data) {
     if (submitting) return;
-    setError('');
     setReceipt(null);
-    if (!enrollmentId) {
-      setError('Elegí una inscripción.');
-      return;
-    }
     setSubmitting(true);
     try {
-      const data = await paymentsApi.create({
-        enrollmentId,
-        classesCount: Number(classesCount),
-        amount: amount ? Number(amount) : undefined,
+      const result = await paymentsApi.create({
+        enrollmentId: data.enrollmentId,
+        classesCount: Number(data.classesCount),
+        amount: data.amount ? Number(data.amount) : undefined,
       });
-      setReceipt(data);
+      setReceipt(result);
       reloadPayments();
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo registrar el pago');
+      setError('root', { message: err.response?.data?.message || 'No se pudo registrar el pago' });
     } finally {
       setSubmitting(false);
     }
@@ -62,17 +71,16 @@ export default function Payments() {
 
   function openEditPayment(p) {
     setEditingPayment(p);
-    setEditForm({ amount: p.amount, classesCount: p.classesCount });
+    resetEdit({ amount: String(p.amount), classesCount: String(p.classesCount) });
   }
 
-  async function handleSaveEdit(e) {
-    e.preventDefault();
+  async function onValidEdit(data) {
     if (savingEdit) return;
     setSavingEdit(true);
     try {
       await paymentsApi.update(editingPayment._id, {
-        amount: Number(editForm.amount),
-        classesCount: Number(editForm.classesCount),
+        amount: Number(data.amount),
+        classesCount: Number(data.classesCount),
       });
       setEditingPayment(null);
       reloadPayments();
@@ -107,10 +115,10 @@ export default function Payments() {
     <div>
       <h1 className="no-print">Registrar pago</h1>
 
-      <form className="card-form no-print" onSubmit={handleSubmit}>
+      <form className="card-form no-print" onSubmit={handleSubmit(onValid)} noValidate>
         <div className="field">
           <label htmlFor="paymentEnrollment">Inscripción</label>
-          <select id="paymentEnrollment" value={enrollmentId} onChange={(e) => setEnrollmentId(e.target.value)} required>
+          <select id="paymentEnrollment" {...register('enrollmentId')}>
             <option value="">Seleccione inscripción</option>
             {enrollments.map((e) => (
               <option key={e._id} value={e._id}>
@@ -118,19 +126,22 @@ export default function Payments() {
               </option>
             ))}
           </select>
+          {errors.enrollmentId && <p className="error">{errors.enrollmentId.message}</p>}
         </div>
 
         <div className="field">
           <label htmlFor="paymentClasses">Cantidad de clases</label>
-          <input id="paymentClasses" type="number" min="1" step="1" required value={classesCount} onChange={(e) => setClassesCount(e.target.value)} />
+          <input id="paymentClasses" type="number" step="1" {...register('classesCount')} />
+          {errors.classesCount && <p className="error">{errors.classesCount.message}</p>}
         </div>
 
         <div className="field">
           <label htmlFor="paymentAmount">Monto (opcional, se calcula según el plan si se deja vacío)</label>
-          <input id="paymentAmount" type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} />
+          <input id="paymentAmount" type="number" step="0.01" {...register('amount')} />
+          {errors.amount && <p className="error">{errors.amount.message}</p>}
         </div>
 
-        {error && <p className="error">{error}</p>}
+        {errors.root && <p className="error">{errors.root.message}</p>}
         <button className="btn" type="submit" disabled={submitting}>
           {submitting ? 'Registrando...' : 'Registrar pago'}
         </button>
@@ -188,30 +199,16 @@ export default function Payments() {
 
       {editingPayment && (
         <Modal title="Modificar pago" onClose={() => setEditingPayment(null)}>
-          <form onSubmit={handleSaveEdit}>
+          <form onSubmit={handleSubmitEdit(onValidEdit)} noValidate>
             <div className="field">
               <label htmlFor="editAmount">Monto</label>
-              <input
-                id="editAmount"
-                type="number"
-                min="0"
-                step="0.01"
-                required
-                value={editForm.amount}
-                onChange={(e) => setEditForm((f) => ({ ...f, amount: e.target.value }))}
-              />
+              <input id="editAmount" type="number" step="0.01" {...registerEdit('amount')} />
+              {editErrors.amount && <p className="error">{editErrors.amount.message}</p>}
             </div>
             <div className="field">
               <label htmlFor="editClasses">Cantidad de clases</label>
-              <input
-                id="editClasses"
-                type="number"
-                min="1"
-                step="1"
-                required
-                value={editForm.classesCount}
-                onChange={(e) => setEditForm((f) => ({ ...f, classesCount: e.target.value }))}
-              />
+              <input id="editClasses" type="number" step="1" {...registerEdit('classesCount')} />
+              {editErrors.classesCount && <p className="error">{editErrors.classesCount.message}</p>}
             </div>
             <p className="mb-4 text-xs text-ink/60">
               Las fechas de clase y el próximo vencimiento no se recalculan al editar; solo el monto y la cantidad quedan corregidos.

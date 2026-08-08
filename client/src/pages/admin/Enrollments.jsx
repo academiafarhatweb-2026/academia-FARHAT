@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { studentsApi, classesApi, plansApi } from '../../api/catalog';
 import { enrollmentsApi } from '../../api/enrollments';
 import { useCrudModal } from '../../hooks/useCrudModal';
@@ -6,21 +8,22 @@ import Modal from '../../components/Modal';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
 import { useConfirm } from '../../context/ConfirmContext';
+import { enrollmentSchema } from '../../schemas';
 
-const emptyForm = { student: '', plan: '', customValue: '', classes: [], enrollmentDate: new Date().toISOString().slice(0, 10) };
+const emptyValues = { student: '', plan: '', customValue: '', classes: [], enrollmentDate: new Date().toISOString().slice(0, 10) };
 
 function classScheduleLine(cls) {
   return cls.slots.map((s) => `${dayLabel(s.day)} ${s.startHour}-${s.endHour}hs`).join(', ');
 }
 
 function toFormValue(enrollment) {
-  if (!enrollment) return emptyForm;
+  if (!enrollment) return emptyValues;
   return {
     // The student/plan can end up null if that record was deleted after this
     // enrollment was created — fall back so editing doesn't crash outright.
     student: enrollment.student?._id || '',
     plan: enrollment.plan?._id || '',
-    customValue: enrollment.customValue ?? enrollment.plan?.value ?? '',
+    customValue: String(enrollment.customValue ?? enrollment.plan?.value ?? ''),
     classes: enrollment.classes.map((c) => c._id),
     enrollmentDate: enrollment.enrollmentDate.slice(0, 10),
   };
@@ -46,10 +49,18 @@ export default function Enrollments() {
   const [students, setStudents] = useState([]);
   const [classes, setClasses] = useState([]);
   const [plans, setPlans] = useState([]);
-  const [form, setForm] = useState(emptyForm);
   const [selectedClass, setSelectedClass] = useState('');
-  const [formError, setFormError] = useState('');
   const confirm = useConfirm();
+
+  const {
+    register,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(enrollmentSchema), defaultValues: emptyValues });
+  const formClasses = watch('classes');
 
   useEffect(() => {
     studentsApi.list().then(setStudents);
@@ -59,13 +70,12 @@ export default function Enrollments() {
 
   useEffect(() => {
     if (mode === 'edit' && selected) {
-      setForm(toFormValue(selected));
+      reset(toFormValue(selected));
     } else if (mode === 'create') {
-      setForm(emptyForm);
+      reset(emptyValues);
     }
     setSelectedClass('');
-    setFormError('');
-  }, [mode, selected]);
+  }, [mode, selected, reset]);
 
   function classLabel(cls) {
     const instrumentName = cls.instrument?.name || 'Instrumento eliminado';
@@ -74,29 +84,30 @@ export default function Enrollments() {
   }
 
   function addClass() {
-    if (!selectedClass || form.classes.includes(selectedClass)) return;
-    setForm((f) => ({ ...f, classes: [...f.classes, selectedClass] }));
+    if (!selectedClass || formClasses.includes(selectedClass)) return;
+    setValue('classes', [...formClasses, selectedClass], { shouldValidate: true });
     setSelectedClass('');
   }
 
   function removeClass(id) {
-    setForm((f) => ({ ...f, classes: f.classes.filter((c) => c !== id) }));
+    setValue(
+      'classes',
+      formClasses.filter((c) => c !== id),
+      { shouldValidate: true }
+    );
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    setFormError('');
+  function handlePlanChange(e) {
+    const planId = e.target.value;
+    const chosenPlan = plans.find((p) => p._id === planId);
+    if (chosenPlan) setValue('customValue', String(chosenPlan.value), { shouldValidate: true });
+  }
 
+  function onValid(data) {
     // If the admin picked a class but forgot to click "+ Agregar", include it anyway.
-    const classes = form.classes.includes(selectedClass) || !selectedClass
-      ? form.classes
-      : [...form.classes, selectedClass];
-
-    if (!form.student) return setFormError('Elegi un alumno.');
-    if (!form.plan) return setFormError('Elegi un precio.');
-    if (classes.length === 0) return setFormError('Agrega al menos una clase (tocando "+ Agregar").');
-
-    submit({ ...form, classes, customValue: Number(form.customValue) });
+    const classesToSubmit =
+      data.classes.includes(selectedClass) || !selectedClass ? data.classes : [...data.classes, selectedClass];
+    submit({ ...data, classes: classesToSubmit, customValue: Number(data.customValue) });
   }
 
   async function handleHardDelete() {
@@ -169,60 +180,35 @@ export default function Enrollments() {
 
       {mode && (
         <Modal title={mode === 'edit' ? 'Modificar inscripción' : 'Nueva inscripción'} onClose={close}>
-          <form onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit(onValid)} noValidate>
             <div className="field">
               <label htmlFor="enrollStudent">Alumno</label>
-              <select
-                id="enrollStudent"
-                value={form.student}
-                disabled={mode === 'edit'}
-                onChange={(e) => setForm((f) => ({ ...f, student: e.target.value }))}
-                required
-              >
+              <select id="enrollStudent" disabled={mode === 'edit'} {...register('student')}>
                 <option value="">Seleccione un alumno</option>
                 {students.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
               </select>
+              {errors.student && <p className="error">{errors.student.message}</p>}
             </div>
 
             <div className="field">
               <label htmlFor="enrollPlan">Cantidad de clases</label>
-              <select
-                id="enrollPlan"
-                value={form.plan}
-                onChange={(e) => {
-                  const planId = e.target.value;
-                  const chosenPlan = plans.find((p) => p._id === planId);
-                  setForm((f) => ({ ...f, plan: planId, customValue: chosenPlan ? chosenPlan.value : f.customValue }));
-                }}
-                required
-              >
+              <select id="enrollPlan" {...register('plan', { onChange: handlePlanChange })}>
                 <option value="">Seleccione cantidad de clases</option>
                 {plans.map((p) => <option key={p._id} value={p._id}>{p.name} - {p.classesIncluded} clases</option>)}
               </select>
+              {errors.plan && <p className="error">{errors.plan.message}</p>}
             </div>
 
             <div className="field">
               <label htmlFor="enrollCustomValue">Precio</label>
-              <input
-                id="enrollCustomValue"
-                type="number"
-                value={form.customValue}
-                onChange={(e) => setForm((f) => ({ ...f, customValue: e.target.value }))}
-                required
-                min={0}
-                step="0.01"
-              />
+              <input id="enrollCustomValue" type="number" step="0.01" {...register('customValue')} />
+              {errors.customValue && <p className="error">{errors.customValue.message}</p>}
             </div>
 
             <div className="field">
               <label htmlFor="enrollDate">Fecha de inscripción</label>
-              <input
-                id="enrollDate"
-                type="date"
-                value={form.enrollmentDate}
-                onChange={(e) => setForm((f) => ({ ...f, enrollmentDate: e.target.value }))}
-                required
-              />
+              <input id="enrollDate" type="date" {...register('enrollmentDate')} />
+              {errors.enrollmentDate && <p className="error">{errors.enrollmentDate.message}</p>}
             </div>
 
             <div className="field">
@@ -235,7 +221,7 @@ export default function Enrollments() {
                 <button type="button" className="btn secondary" onClick={addClass}>+ Agregar</button>
               </div>
               <ul>
-                {form.classes.map((id) => {
+                {formClasses.map((id) => {
                   const cls = classes.find((c) => c._id === id);
                   return (
                     <li key={id} className="flex-row">
@@ -245,9 +231,10 @@ export default function Enrollments() {
                   );
                 })}
               </ul>
+              {errors.classes && <p className="error">{errors.classes.message}</p>}
             </div>
 
-            {(formError || error) && <p className="error mb-3">{formError || error}</p>}
+            {error && <p className="error mb-3">{error}</p>}
             <button className="btn" type="submit" disabled={submitting}>
               {submitting ? 'Guardando...' : mode === 'edit' ? 'Guardar' : 'Inscribir'}
             </button>

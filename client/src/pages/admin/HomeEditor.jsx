@@ -1,32 +1,34 @@
 import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { homeApi } from '../../api/home';
 import { instrumentsApi } from '../../api/catalog';
 import ImageUploader from '../../components/ImageUploader';
-import { PHONE_PATTERN, PHONE_TITLE, PHONE_MAXLENGTH, WHATSAPP_PATTERN, WHATSAPP_TITLE, WHATSAPP_MAXLENGTH } from '../../utils/validation';
+import { homeContentSchema } from '../../schemas';
 
-const emptyForm = {
-  heroImages: [],
-  address: '',
-  phone: '',
-  whatsappNumber: '',
-  instagram: '',
-  facebook: '',
-};
+const emptyValues = { address: '', phone: '', whatsappNumber: '', instagram: '', facebook: '' };
 
 export default function HomeEditor() {
   const [instruments, setInstruments] = useState([]);
   const [drafts, setDrafts] = useState({});
-  const [form, setForm] = useState(emptyForm);
+  const [heroImages, setHeroImages] = useState([]);
   const [saved, setSaved] = useState(false);
   const [savedInstrumentId, setSavedInstrumentId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savingInstrumentId, setSavingInstrumentId] = useState(null);
 
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({ resolver: zodResolver(homeContentSchema), defaultValues: emptyValues });
+
   useEffect(() => {
     reloadInstruments();
     homeApi.get().then((content) => {
-      setForm({
-        heroImages: content.heroImages || [],
+      setHeroImages(content.heroImages || []);
+      reset({
         address: content.address || '',
         phone: content.phone || '',
         whatsappNumber: content.whatsappNumber || '',
@@ -34,7 +36,7 @@ export default function HomeEditor() {
         facebook: content.facebook || '',
       });
     });
-  }, []);
+  }, [reset]);
 
   function reloadInstruments() {
     instrumentsApi.list().then((list) => {
@@ -51,21 +53,23 @@ export default function HomeEditor() {
     });
   }
 
-  function setField(field, value) {
-    setForm((f) => ({ ...f, [field]: value }));
-  }
-
   function setDraftField(instrumentId, field, value) {
     setDrafts((d) => ({ ...d, [instrumentId]: { ...d[instrumentId], [field]: value } }));
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
+  async function onValid(data) {
     if (saving) return;
     setSaving(true);
     setSaved(false);
     try {
-      await homeApi.update(form);
+      await homeApi.update({
+        heroImages,
+        address: data.address.trim(),
+        phone: data.phone.trim(),
+        whatsappNumber: data.whatsappNumber.trim(),
+        instagram: data.instagram.trim(),
+        facebook: data.facebook.trim(),
+      });
       setSaved(true);
     } finally {
       setSaving(false);
@@ -89,44 +93,33 @@ export default function HomeEditor() {
     <div>
       <h1>Editar página principal</h1>
 
-      <form className="card-form" onSubmit={handleSubmit}>
-        <ImageUploader label="Imágenes principales (portada)" value={form.heroImages} onChange={(v) => setField('heroImages', v)} />
+      <form className="card-form" onSubmit={handleSubmit(onValid)} noValidate>
+        <ImageUploader label="Imágenes principales (portada)" value={heroImages} onChange={setHeroImages} />
 
         <div className="field">
           <label htmlFor="address">Dirección</label>
-          <input id="address" value={form.address} onChange={(e) => setField('address', e.target.value)} maxLength={200} />
+          <input id="address" {...register('address')} />
+          {errors.address && <p className="error">{errors.address.message}</p>}
         </div>
         <div className="field">
           <label htmlFor="phone">Teléfono</label>
-          <input
-            id="phone"
-            type="tel"
-            value={form.phone}
-            onChange={(e) => setField('phone', e.target.value)}
-            maxLength={PHONE_MAXLENGTH}
-            pattern={PHONE_PATTERN}
-            title={PHONE_TITLE}
-          />
+          <input id="phone" type="tel" {...register('phone')} />
+          {errors.phone && <p className="error">{errors.phone.message}</p>}
         </div>
         <div className="field">
           <label htmlFor="whatsappNumber">Número de WhatsApp (con código de país, sin +)</label>
-          <input
-            id="whatsappNumber"
-            type="tel"
-            value={form.whatsappNumber}
-            onChange={(e) => setField('whatsappNumber', e.target.value)}
-            maxLength={WHATSAPP_MAXLENGTH}
-            pattern={WHATSAPP_PATTERN}
-            title={WHATSAPP_TITLE}
-          />
+          <input id="whatsappNumber" type="tel" {...register('whatsappNumber')} />
+          {errors.whatsappNumber && <p className="error">{errors.whatsappNumber.message}</p>}
         </div>
         <div className="field">
           <label htmlFor="instagram">Instagram (link completo)</label>
-          <input id="instagram" type="url" value={form.instagram} onChange={(e) => setField('instagram', e.target.value)} maxLength={200} />
+          <input id="instagram" type="url" {...register('instagram')} />
+          {errors.instagram && <p className="error">{errors.instagram.message}</p>}
         </div>
         <div className="field">
           <label htmlFor="facebook">Facebook (link completo)</label>
-          <input id="facebook" type="url" value={form.facebook} onChange={(e) => setField('facebook', e.target.value)} maxLength={200} />
+          <input id="facebook" type="url" {...register('facebook')} />
+          {errors.facebook && <p className="error">{errors.facebook.message}</p>}
         </div>
 
         <button className="btn" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>

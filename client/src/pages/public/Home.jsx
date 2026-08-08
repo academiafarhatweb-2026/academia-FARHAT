@@ -155,7 +155,7 @@ export default function Home() {
       {/* Trust strip */}
       <section className="border-y border-ivory/10 bg-walnut py-5">
         <div className="container flex flex-wrap justify-center gap-x-3 gap-y-2 text-center text-xs font-semibold uppercase tracking-widest text-ivory/60">
-          {['Todos los niveles', 'Profesores especializados', 'Horarios flexibles', 'Clases individuales'].map((item, i, arr) => (
+          {['Todos los niveles', 'Profesores especializados', 'Horarios flexibles', 'Clases grupales'].map((item, i, arr) => (
             <span key={item} className="flex items-center gap-3">
               <span className="cursor-default transition hover:text-gold">{item}</span>
               {i < arr.length - 1 && <span className="text-gold">&middot;</span>}
@@ -168,7 +168,7 @@ export default function Home() {
       <section id="instrumentos" className="container py-24">
         <div className="mx-auto mb-4 max-w-xl text-center">
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Nuestras clases</span>
-          <h2 className="mt-4 font-display text-4xl font-semibold text-ivory sm:text-5xl">Elegi tu instrumento</h2>
+          <h2 className="mt-4 font-display text-4xl font-semibold text-ivory sm:text-5xl">Elegí tu instrumento</h2>
         </div>
         <StringDivider className="mx-auto mb-14 h-4 w-40 text-gold/50" />
 
@@ -212,7 +212,7 @@ export default function Home() {
             </button>
           ))}
           {instruments.length === 0 && (
-            <p className="col-span-full text-center text-ivory/60">Proximamente vamos a mostrar aca nuestros instrumentos.</p>
+            <p className="col-span-full text-center text-ivory/60">Próximamente vamos a mostrar acá nuestros instrumentos.</p>
           )}
         </div>
       </section>
@@ -222,8 +222,8 @@ export default function Home() {
       <section className="border-t border-ivory/10 py-24">
         <div className="container">
           <div className="mb-14 max-w-xl">
-            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Por que Farhat</span>
-            <h2 className="mt-4 font-display text-4xl font-semibold text-ivory sm:text-5xl">Asi son nuestras clases</h2>
+            <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">¿Por qué elegir Academia Farhat?</span>
+            <h2 className="mt-4 font-display text-4xl font-semibold text-ivory sm:text-5xl">Así son nuestras clases</h2>
             <StringDivider className="mt-6 h-4 w-32 text-gold/50" />
           </div>
 
@@ -259,7 +259,7 @@ export default function Home() {
           <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
             <div className="text-center md:text-left">
               <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Visitanos</span>
-              <h2 className="mt-2 font-display text-3xl font-semibold text-ivory sm:text-4xl">Ubicacion y contacto</h2>
+              <h2 className="mt-2 font-display text-3xl font-semibold text-ivory sm:text-4xl">Ubicación y contacto</h2>
 
               <div className="mt-5 flex items-center justify-center gap-3 md:justify-start">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold">
