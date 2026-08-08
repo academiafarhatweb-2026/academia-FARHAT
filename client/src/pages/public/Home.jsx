@@ -259,7 +259,7 @@ export default function Home() {
           <div className="relative flex flex-col gap-8 md:flex-row md:items-center md:justify-between">
             <div className="text-center md:text-left">
               <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Visitanos</span>
-              <h2 className="mt-2 font-display text-3xl font-semibold text-ivory sm:text-4xl">Ubicacion y contacto</h2>
+              <h2 className="mt-2 font-display text-3xl font-semibold text-ivory sm:text-4xl">Ubicación y contacto</h2>
 
               <div className="mt-5 flex items-center justify-center gap-3 md:justify-start">
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gold/15 text-gold">
