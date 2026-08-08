@@ -1,8 +1,11 @@
 import { Fragment, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { teachersApi } from '../../api/catalog';
 import { settlementsApi } from '../../api/settlements';
 import Modal from '../../components/Modal';
 import { useConfirm } from '../../context/ConfirmContext';
+import { settlementGenerateSchema, settlementLineEditSchema, settlementIdentityEditSchema } from '../../schemas';
 
 const now = new Date();
 
@@ -22,23 +25,44 @@ function toRefId(value) {
 
 export default function Settlements() {
   const [teachers, setTeachers] = useState([]);
-  const [teacherId, setTeacherId] = useState('');
-  const [periodMonth, setPeriodMonth] = useState(now.getMonth() + 1);
-  const [periodYear, setPeriodYear] = useState(now.getFullYear());
   const [settlement, setSettlement] = useState(null);
-  const [error, setError] = useState('');
   const [editingIndex, setEditingIndex] = useState(null);
-  const [lineForm, setLineForm] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [savingLine, setSavingLine] = useState(false);
   const [settlements, setSettlements] = useState([]);
   const [loadingSettlements, setLoadingSettlements] = useState(true);
   const [loadingViewId, setLoadingViewId] = useState(null);
   const [editingSettlement, setEditingSettlement] = useState(null);
-  const [editSettlementForm, setEditSettlementForm] = useState({ teacherId: '', periodMonth: '', periodYear: '' });
-  const [editSettlementError, setEditSettlementError] = useState('');
   const [savingSettlement, setSavingSettlement] = useState(false);
   const confirm = useConfirm();
+
+  const {
+    register: registerGenerate,
+    handleSubmit: handleSubmitGenerate,
+    setError: setGenerateError,
+    formState: { errors: generateErrors },
+  } = useForm({
+    resolver: zodResolver(settlementGenerateSchema),
+    defaultValues: { teacherId: '', periodMonth: String(now.getMonth() + 1), periodYear: String(now.getFullYear()) },
+  });
+
+  const {
+    register: registerLine,
+    handleSubmit: handleSubmitLine,
+    reset: resetLine,
+    watch: watchLine,
+    formState: { errors: lineErrors },
+  } = useForm({ resolver: zodResolver(settlementLineEditSchema), defaultValues: { value: '', percentage: '', pricePerClass: '', classesCount: '' } });
+  const linePricePerClass = watchLine('pricePerClass');
+  const lineClassesCount = watchLine('classesCount');
+
+  const {
+    register: registerSettlement,
+    handleSubmit: handleSubmitSettlement,
+    reset: resetSettlement,
+    setError: setSettlementError,
+    formState: { errors: settlementErrors },
+  } = useForm({ resolver: zodResolver(settlementIdentityEditSchema), defaultValues: { teacherId: '', periodMonth: '', periodYear: '' } });
 
   function reloadSettlements() {
     return settlementsApi.list().then((data) => {
@@ -57,7 +81,6 @@ export default function Settlements() {
     try {
       const data = await settlementsApi.getOne(id);
       setSettlement(data);
-      setError('');
     } finally {
       setLoadingViewId(null);
     }
@@ -65,35 +88,31 @@ export default function Settlements() {
 
   function openEditSettlement(s) {
     setEditingSettlement(s);
-    setEditSettlementError('');
-    setEditSettlementForm({
+    resetSettlement({
       teacherId: s.teacher?._id || '',
-      periodMonth: s.periodMonth,
-      periodYear: s.periodYear,
+      periodMonth: String(s.periodMonth),
+      periodYear: String(s.periodYear),
     });
   }
 
   function closeEditSettlement() {
     setEditingSettlement(null);
-    setEditSettlementForm({ teacherId: '', periodMonth: '', periodYear: '' });
   }
 
-  async function handleSaveSettlement(e) {
-    e.preventDefault();
+  async function onValidSettlement(data) {
     if (savingSettlement) return;
     setSavingSettlement(true);
-    setEditSettlementError('');
     try {
-      const data = await settlementsApi.update(editingSettlement._id, {
-        teacherId: editSettlementForm.teacherId,
-        periodMonth: Number(editSettlementForm.periodMonth),
-        periodYear: Number(editSettlementForm.periodYear),
+      const updated = await settlementsApi.update(editingSettlement._id, {
+        teacherId: data.teacherId,
+        periodMonth: Number(data.periodMonth),
+        periodYear: Number(data.periodYear),
       });
-      if (settlement?._id === data._id) setSettlement(data);
+      if (settlement?._id === updated._id) setSettlement(updated);
       closeEditSettlement();
       reloadSettlements();
     } catch (err) {
-      setEditSettlementError(err.response?.data?.message || 'No se pudo modificar la liquidación');
+      setSettlementError('root', { message: err.response?.data?.message || 'No se pudo modificar la liquidación' });
     } finally {
       setSavingSettlement(false);
     }
@@ -112,19 +131,20 @@ export default function Settlements() {
     reloadSettlements();
   }
 
-  async function handleGenerate(e) {
-    e.preventDefault();
+  async function onValidGenerate(data) {
     if (generating) return;
-    setError('');
     setSettlement(null);
-    if (!teacherId) return;
     setGenerating(true);
     try {
-      const data = await settlementsApi.generate({ teacherId, periodMonth: Number(periodMonth), periodYear: Number(periodYear) });
-      setSettlement(data);
+      const result = await settlementsApi.generate({
+        teacherId: data.teacherId,
+        periodMonth: Number(data.periodMonth),
+        periodYear: Number(data.periodYear),
+      });
+      setSettlement(result);
       reloadSettlements();
     } catch (err) {
-      setError(err.response?.data?.message || 'No se pudo generar la liquidación');
+      setGenerateError('root', { message: err.response?.data?.message || 'No se pudo generar la liquidación' });
     } finally {
       setGenerating(false);
     }
@@ -133,54 +153,42 @@ export default function Settlements() {
   function openEditLine(index) {
     const line = settlement.lines[index];
     setEditingIndex(index);
-    setLineForm({
-      value: line.value,
-      percentage: line.percentage,
-      pricePerClass: line.pricePerClass,
-      classesCount: line.classesCount,
+    resetLine({
+      value: String(line.value),
+      percentage: String(line.percentage),
+      pricePerClass: String(line.pricePerClass),
+      classesCount: String(line.classesCount),
     });
   }
 
   function closeEditLine() {
     setEditingIndex(null);
-    setLineForm(null);
   }
 
-  function setLineField(field, raw) {
-    const value = raw === '' ? '' : Number(raw);
-    setLineForm((f) => ({ ...f, [field]: value }));
-  }
-
-  async function handleSaveLine(e) {
-    e.preventDefault();
+  async function onValidLine(data) {
     if (savingLine) return;
     setSavingLine(true);
     const updatedLines = settlement.lines.map((line, i) => {
-      if (i !== editingIndex) {
-        return {
-          ...line,
-          enrollment: toRefId(line.enrollment),
-          student: toRefId(line.student),
-          instrument: toRefId(line.instrument),
-          plan: toRefId(line.plan),
-        };
-      }
-      return {
+      const base = {
         ...line,
         enrollment: toRefId(line.enrollment),
         student: toRefId(line.student),
         instrument: toRefId(line.instrument),
         plan: toRefId(line.plan),
-        value: Number(lineForm.value) || 0,
-        percentage: Number(lineForm.percentage) || 0,
-        pricePerClass: Number(lineForm.pricePerClass) || 0,
-        classesCount: Number(lineForm.classesCount) || 0,
+      };
+      if (i !== editingIndex) return base;
+      return {
+        ...base,
+        value: Number(data.value),
+        percentage: Number(data.percentage),
+        pricePerClass: Number(data.pricePerClass),
+        classesCount: Number(data.classesCount),
       };
     });
 
     try {
-      const data = await settlementsApi.update(settlement._id, { lines: updatedLines });
-      setSettlement(data);
+      const updated = await settlementsApi.update(settlement._id, { lines: updatedLines });
+      setSettlement(updated);
       closeEditLine();
       reloadSettlements();
     } finally {
@@ -190,33 +198,36 @@ export default function Settlements() {
 
   const groups = settlement ? groupByInstrument(settlement.lines) : [];
   const liveTotal =
-    lineForm && lineForm.pricePerClass !== '' && lineForm.classesCount !== ''
-      ? Number(lineForm.pricePerClass) * Number(lineForm.classesCount)
+    linePricePerClass && lineClassesCount && !isNaN(Number(linePricePerClass)) && !isNaN(Number(lineClassesCount))
+      ? Number(linePricePerClass) * Number(lineClassesCount)
       : 0;
 
   return (
     <div>
       <h1>Liquidación de profesores</h1>
 
-      <form className="card-form no-print" onSubmit={handleGenerate}>
+      <form className="card-form no-print" onSubmit={handleSubmitGenerate(onValidGenerate)} noValidate>
         <div className="field">
           <label htmlFor="settlementTeacher">Profesor</label>
-          <select id="settlementTeacher" value={teacherId} onChange={(e) => setTeacherId(e.target.value)} required>
+          <select id="settlementTeacher" {...registerGenerate('teacherId')}>
             <option value="">Seleccione profesor</option>
             {teachers.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
           </select>
+          {generateErrors.teacherId && <p className="error">{generateErrors.teacherId.message}</p>}
         </div>
         <div className="flex-row">
           <div className="field">
             <label htmlFor="settlementMonth">Mes</label>
-            <input id="settlementMonth" type="number" min="1" max="12" step="1" required value={periodMonth} onChange={(e) => setPeriodMonth(e.target.value)} />
+            <input id="settlementMonth" type="number" step="1" {...registerGenerate('periodMonth')} />
+            {generateErrors.periodMonth && <p className="error">{generateErrors.periodMonth.message}</p>}
           </div>
           <div className="field">
             <label htmlFor="settlementYear">Año</label>
-            <input id="settlementYear" type="number" min="2000" max="2100" step="1" required value={periodYear} onChange={(e) => setPeriodYear(e.target.value)} />
+            <input id="settlementYear" type="number" step="1" {...registerGenerate('periodYear')} />
+            {generateErrors.periodYear && <p className="error">{generateErrors.periodYear.message}</p>}
           </div>
         </div>
-        {error && <p className="error">{error}</p>}
+        {generateErrors.root && <p className="error">{generateErrors.root.message}</p>}
         <button className="btn" type="submit" disabled={generating}>
           {generating ? 'Generando...' : 'Generar liquidación'}
         </button>
@@ -333,24 +344,28 @@ export default function Settlements() {
         </div>
       )}
 
-      {editingIndex !== null && lineForm && (
+      {editingIndex !== null && (
         <Modal title="Modificar línea de liquidación" onClose={closeEditLine}>
-          <form onSubmit={handleSaveLine}>
+          <form onSubmit={handleSubmitLine(onValidLine)} noValidate>
             <div className="field">
               <label htmlFor="lineValue">Valor</label>
-              <input id="lineValue" type="number" min="0" step="0.01" required value={lineForm.value} onChange={(e) => setLineField('value', e.target.value)} />
+              <input id="lineValue" type="number" step="0.01" {...registerLine('value')} />
+              {lineErrors.value && <p className="error">{lineErrors.value.message}</p>}
             </div>
             <div className="field">
               <label htmlFor="linePercentage">%</label>
-              <input id="linePercentage" type="number" min="0" max="100" step="0.01" required value={lineForm.percentage} onChange={(e) => setLineField('percentage', e.target.value)} />
+              <input id="linePercentage" type="number" step="0.01" {...registerLine('percentage')} />
+              {lineErrors.percentage && <p className="error">{lineErrors.percentage.message}</p>}
             </div>
             <div className="field">
               <label htmlFor="linePrice">Precio por clase</label>
-              <input id="linePrice" type="number" min="0" step="0.01" required value={lineForm.pricePerClass} onChange={(e) => setLineField('pricePerClass', e.target.value)} />
+              <input id="linePrice" type="number" step="0.01" {...registerLine('pricePerClass')} />
+              {lineErrors.pricePerClass && <p className="error">{lineErrors.pricePerClass.message}</p>}
             </div>
             <div className="field">
               <label htmlFor="lineClasses">Clases</label>
-              <input id="lineClasses" type="number" min="0" step="1" required value={lineForm.classesCount} onChange={(e) => setLineField('classesCount', e.target.value)} />
+              <input id="lineClasses" type="number" step="1" {...registerLine('classesCount')} />
+              {lineErrors.classesCount && <p className="error">{lineErrors.classesCount.message}</p>}
             </div>
             <p className="mb-4 text-sm text-ink/60">
               Total: <strong className="text-ink">${liveTotal}</strong>
@@ -364,51 +379,31 @@ export default function Settlements() {
 
       {editingSettlement && (
         <Modal title="Modificar liquidación" onClose={closeEditSettlement}>
-          <form onSubmit={handleSaveSettlement}>
+          <form onSubmit={handleSubmitSettlement(onValidSettlement)} noValidate>
             <div className="field">
               <label htmlFor="editSettlementTeacher">Profesor</label>
-              <select
-                id="editSettlementTeacher"
-                value={editSettlementForm.teacherId}
-                onChange={(e) => setEditSettlementForm((f) => ({ ...f, teacherId: e.target.value }))}
-                required
-              >
+              <select id="editSettlementTeacher" {...registerSettlement('teacherId')}>
                 <option value="">Seleccione profesor</option>
                 {teachers.map((t) => <option key={t._id} value={t._id}>{t.name}</option>)}
               </select>
+              {settlementErrors.teacherId && <p className="error">{settlementErrors.teacherId.message}</p>}
             </div>
             <div className="flex-row">
               <div className="field">
                 <label htmlFor="editSettlementMonth">Mes</label>
-                <input
-                  id="editSettlementMonth"
-                  type="number"
-                  min="1"
-                  max="12"
-                  step="1"
-                  required
-                  value={editSettlementForm.periodMonth}
-                  onChange={(e) => setEditSettlementForm((f) => ({ ...f, periodMonth: e.target.value }))}
-                />
+                <input id="editSettlementMonth" type="number" step="1" {...registerSettlement('periodMonth')} />
+                {settlementErrors.periodMonth && <p className="error">{settlementErrors.periodMonth.message}</p>}
               </div>
               <div className="field">
                 <label htmlFor="editSettlementYear">Año</label>
-                <input
-                  id="editSettlementYear"
-                  type="number"
-                  min="2000"
-                  max="2100"
-                  step="1"
-                  required
-                  value={editSettlementForm.periodYear}
-                  onChange={(e) => setEditSettlementForm((f) => ({ ...f, periodYear: e.target.value }))}
-                />
+                <input id="editSettlementYear" type="number" step="1" {...registerSettlement('periodYear')} />
+                {settlementErrors.periodYear && <p className="error">{settlementErrors.periodYear.message}</p>}
               </div>
             </div>
             <p className="mb-4 text-xs text-ink/60">
               Las clases y montos se vuelven a calcular para el profesor y periodo elegidos.
             </p>
-            {editSettlementError && <p className="error mb-3">{editSettlementError}</p>}
+            {settlementErrors.root && <p className="error mb-3">{settlementErrors.root.message}</p>}
             <button className="btn" type="submit" disabled={savingSettlement}>
               {savingSettlement ? 'Guardando...' : 'Guardar'}
             </button>
