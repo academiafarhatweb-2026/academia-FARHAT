@@ -6,6 +6,7 @@ const instrumentSchema = new mongoose.Schema(
     isPublic: { type: Boolean, default: true },
     description: { type: String, default: '' },
     images: { type: [String], default: [] },
+    order: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
