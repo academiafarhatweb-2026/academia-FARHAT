@@ -30,7 +30,7 @@
   }
 
   body {
-    @apply m-0 bg-ivory font-sans text-ink antialiased;
+    @apply m-0 overflow-x-hidden bg-ivory font-sans text-ink antialiased;
   }
 
   #root {
@@ -94,6 +94,22 @@
 
   .field .error {
     @apply text-xs font-medium text-wine;
+  }
+
+  .searchable-select {
+    @apply relative;
+  }
+
+  .searchable-select-options {
+    @apply absolute inset-x-0 top-full z-20 mt-1 max-h-56 overflow-y-auto rounded-lg border border-ink/15 bg-white shadow-lg;
+  }
+
+  .searchable-select-option {
+    @apply cursor-pointer px-3 py-2 text-sm text-ink transition hover:bg-gold/10;
+  }
+
+  .searchable-select-empty {
+    @apply px-3 py-2 text-sm text-ink/40;
   }
 
   /* Edge/IE add their own built-in reveal-password eye icon, which duplicates
@@ -205,7 +221,7 @@
   }
 
   .admin-content {
-    @apply mx-auto w-full max-w-6xl flex-1 p-4 sm:p-6;
+    @apply mx-auto w-full min-w-0 max-w-6xl flex-1 p-4 sm:p-6;
   }
 
   .grid {

@@ -1,10 +1,12 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { studentsApi } from '../../api/catalog';
 import { enrollmentsApi } from '../../api/enrollments';
 import { useCrudModal } from '../../hooks/useCrudModal';
+import { usePagination } from '../../hooks/usePagination';
 import Modal from '../../components/Modal';
+import Pagination from '../../components/Pagination';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -28,6 +30,7 @@ export default function Students() {
   const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, update, reload } =
     useCrudModal(studentsApi);
   const confirm = useConfirm();
+  const [search, setSearch] = useState('');
 
   const {
     register,
@@ -43,6 +46,13 @@ export default function Students() {
       reset(emptyValues);
     }
   }, [mode, selected, reset]);
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) => item.name.toLowerCase().includes(q) || item.email.toLowerCase().includes(q));
+  }, [items, search]);
+  const { page, setPage, totalPages, pageItems } = usePagination(filteredItems, 10);
 
   function onValid(data) {
     submit({ name: data.name.trim(), email: data.email.trim(), phone: data.phone.trim(), active: data.active });
@@ -79,6 +89,27 @@ export default function Students() {
         El alumno ingresa solo con su email, sin contraseña. Alcanza con cargarlo acá.
       </p>
 
+      <div className="flex-row mb-4">
+        <button className="btn" onClick={openCreate}>Nueva</button>
+        <button className="btn secondary" onClick={openEdit} disabled={!selectedId}>Modificar</button>
+        <button className="btn secondary" onClick={toggleActive} disabled={!selectedId}>
+          {selected?.active === false ? 'Dar de alta' : 'Dar de baja'}
+        </button>
+        <button className="btn danger" onClick={handleHardDelete} disabled={!selectedId}>Eliminar definitivamente</button>
+      </div>
+
+      <div className="field" style={{ maxWidth: 320 }}>
+        <input
+          type="search"
+          placeholder="Buscar por nombre o email..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+      </div>
+
       {loading ? (
         <p>Cargando...</p>
       ) : (
@@ -86,7 +117,7 @@ export default function Students() {
           <table>
             <thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Pago</th><th>Clases</th><th>Vencimiento</th></tr></thead>
             <tbody>
-              {items.map((item) => (
+              {pageItems.map((item) => (
                 <tr key={item._id} className={item._id === selectedId ? 'selected' : ''} onClick={() => setSelectedId(item._id)} style={{ cursor: 'pointer' }}>
                   <td>{item.name}</td>
                   <td>{item.email}</td>
@@ -142,20 +173,13 @@ export default function Students() {
                   </td>
                 </tr>
               ))}
-              {items.length === 0 && <tr><td colSpan="7">Sin registros.</td></tr>}
+              {pageItems.length === 0 && <tr><td colSpan="7">Sin registros.</td></tr>}
             </tbody>
           </table>
         </div>
       )}
 
-      <div className="flex-row mt-16">
-        <button className="btn" onClick={openCreate}>Nueva</button>
-        <button className="btn secondary" onClick={openEdit} disabled={!selectedId}>Modificar</button>
-        <button className="btn secondary" onClick={toggleActive} disabled={!selectedId}>
-          {selected?.active === false ? 'Dar de alta' : 'Dar de baja'}
-        </button>
-        <button className="btn danger" onClick={handleHardDelete} disabled={!selectedId}>Eliminar definitivamente</button>
-      </div>
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
 
       {mode && (
         <Modal title={mode === 'edit' ? 'Modificar alumno' : 'Nuevo alumno'} onClose={close}>

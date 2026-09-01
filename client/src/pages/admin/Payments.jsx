@@ -1,11 +1,14 @@
-import { Fragment, useEffect, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { enrollmentsApi } from '../../api/enrollments';
 import { paymentsApi } from '../../api/payments';
 import { useConfirm } from '../../context/ConfirmContext';
+import { usePagination } from '../../hooks/usePagination';
 import Modal from '../../components/Modal';
+import Pagination from '../../components/Pagination';
+import SearchableSelect from '../../components/SearchableSelect';
 import { paymentCreateSchema, paymentEditSchema } from '../../schemas';
 
 export default function Payments() {
@@ -19,17 +22,21 @@ export default function Payments() {
   const [savingEdit, setSavingEdit] = useState(false);
   const [viewingReceipt, setViewingReceipt] = useState(null);
   const [loadingReceiptId, setLoadingReceiptId] = useState(null);
+  const [search, setSearch] = useState('');
   const confirm = useConfirm();
 
   const {
     register,
     handleSubmit,
     setError,
+    watch,
+    setValue,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(paymentCreateSchema),
     defaultValues: { enrollmentId: searchParams.get('enrollmentId') || '', classesCount: '4', amount: '' },
   });
+  const enrollmentId = watch('enrollmentId');
 
   const {
     register: registerEdit,
@@ -111,6 +118,15 @@ export default function Payments() {
     }
   }
 
+  const filteredPayments = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return payments;
+    return payments.filter(
+      (p) => p.studentName?.toLowerCase().includes(q) || p.instrumentName?.toLowerCase().includes(q)
+    );
+  }, [payments, search]);
+  const { page, setPage, totalPages, pageItems } = usePagination(filteredPayments, 10);
+
   return (
     <div>
       <h1 className="no-print">Registrar pago</h1>
@@ -118,14 +134,16 @@ export default function Payments() {
       <form className="card-form no-print" onSubmit={handleSubmit(onValid)} noValidate>
         <div className="field">
           <label htmlFor="paymentEnrollment">Inscripción</label>
-          <select id="paymentEnrollment" {...register('enrollmentId')}>
-            <option value="">Seleccione inscripción</option>
-            {enrollments.map((e) => (
-              <option key={e._id} value={e._id}>
-                {e.student?.name} - {e.classes?.map((c) => c.instrument?.name).join(', ')}
-              </option>
-            ))}
-          </select>
+          <SearchableSelect
+            id="paymentEnrollment"
+            placeholder="Buscar alumno o instrumento..."
+            options={enrollments.map((e) => ({
+              value: e._id,
+              label: `${e.student?.name} - ${e.classes?.map((c) => c.instrument?.name).join(', ')}`,
+            }))}
+            value={enrollmentId}
+            onChange={(v) => setValue('enrollmentId', v, { shouldValidate: true })}
+          />
           {errors.enrollmentId && <p className="error">{errors.enrollmentId.message}</p>}
         </div>
 
@@ -157,6 +175,18 @@ export default function Payments() {
       <h2 className="no-print mt-16">Historial de pagos</h2>
       <p className="no-print mb-4 text-sm text-ink/60">Todos los pagos registrados, con los más recientes primero.</p>
 
+      <div className="field no-print" style={{ maxWidth: 320 }}>
+        <input
+          type="search"
+          placeholder="Buscar por alumno o instrumento..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+      </div>
+
       {loadingPayments ? (
         <p className="no-print">Cargando...</p>
       ) : (
@@ -174,7 +204,7 @@ export default function Payments() {
               </tr>
             </thead>
             <tbody>
-              {payments.map((p) => (
+              {pageItems.map((p) => (
                 <tr key={p._id}>
                   <td>{p.studentName}</td>
                   <td>{p.instrumentName}</td>
@@ -191,11 +221,13 @@ export default function Payments() {
                   </td>
                 </tr>
               ))}
-              {payments.length === 0 && <tr><td colSpan="7">Sin registros.</td></tr>}
+              {pageItems.length === 0 && <tr><td colSpan="7">Sin registros.</td></tr>}
             </tbody>
           </table>
         </div>
       )}
+
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
 
       {editingPayment && (
         <Modal title="Modificar pago" onClose={() => setEditingPayment(null)}>

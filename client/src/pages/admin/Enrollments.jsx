@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { studentsApi, classesApi, plansApi } from '../../api/catalog';
 import { enrollmentsApi } from '../../api/enrollments';
 import { useCrudModal } from '../../hooks/useCrudModal';
+import { usePagination } from '../../hooks/usePagination';
 import Modal from '../../components/Modal';
+import Pagination from '../../components/Pagination';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -50,6 +52,7 @@ export default function Enrollments() {
   const [classes, setClasses] = useState([]);
   const [plans, setPlans] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
+  const [search, setSearch] = useState('');
   const confirm = useConfirm();
 
   const {
@@ -76,6 +79,17 @@ export default function Enrollments() {
     }
     setSelectedClass('');
   }, [mode, selected, reset]);
+
+  const filteredItems = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((e) => {
+      const studentName = e.student?.name?.toLowerCase() || '';
+      const instrumentNames = e.classes?.map((c) => c.instrument?.name?.toLowerCase() || '').join(' ') || '';
+      return studentName.includes(q) || instrumentNames.includes(q);
+    });
+  }, [items, search]);
+  const { page, setPage, totalPages, pageItems } = usePagination(filteredItems, 10);
 
   function classLabel(cls) {
     const instrumentName = cls.instrument?.name || 'Instrumento eliminado';
@@ -128,6 +142,24 @@ export default function Enrollments() {
     <div>
       <h1>Inscripciones</h1>
 
+      <div className="flex-row mb-4">
+        <button className="btn" onClick={openCreate}>Nueva inscripción</button>
+        <button className="btn secondary" onClick={openEdit} disabled={!selectedId}>Modificar</button>
+        <button className="btn danger" onClick={handleHardDelete} disabled={!selectedId}>Eliminar definitivamente</button>
+      </div>
+
+      <div className="field" style={{ maxWidth: 320 }}>
+        <input
+          type="search"
+          placeholder="Buscar por alumno o instrumento..."
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
+        />
+      </div>
+
       {loading ? (
         <p>Cargando...</p>
       ) : (
@@ -135,7 +167,7 @@ export default function Enrollments() {
           <table>
             <thead><tr><th>Alumno</th><th>Precio</th><th>Clases</th><th>Vencimiento</th><th>Inscripción</th><th></th></tr></thead>
             <tbody>
-              {items.map((e) => (
+              {pageItems.map((e) => (
                 <tr key={e._id} className={e._id === selectedId ? 'selected' : ''} onClick={() => setSelectedId(e._id)} style={{ cursor: 'pointer' }}>
                   <td>{e.student?.name}</td>
                   <td>
@@ -166,17 +198,13 @@ export default function Enrollments() {
                   </td>
                 </tr>
               ))}
-              {items.length === 0 && <tr><td colSpan="6">Sin registros.</td></tr>}
+              {pageItems.length === 0 && <tr><td colSpan="6">Sin registros.</td></tr>}
             </tbody>
           </table>
         </div>
       )}
 
-      <div className="flex-row mt-16">
-        <button className="btn" onClick={openCreate}>Nueva inscripción</button>
-        <button className="btn secondary" onClick={openEdit} disabled={!selectedId}>Modificar</button>
-        <button className="btn danger" onClick={handleHardDelete} disabled={!selectedId}>Eliminar definitivamente</button>
-      </div>
+      <Pagination page={page} totalPages={totalPages} onChange={setPage} />
 
       {mode && (
         <Modal title={mode === 'edit' ? 'Modificar inscripción' : 'Nueva inscripción'} onClose={close}>
