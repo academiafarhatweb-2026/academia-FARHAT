@@ -115,7 +115,7 @@ export default function Students() {
       ) : (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Pago</th><th>Clases</th><th>Vencimiento</th></tr></thead>
+            <thead><tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Estado</th><th>Pago</th><th>Promo</th><th>Clases</th><th>Vencimiento</th></tr></thead>
             <tbody>
               {pageItems.map((item) => (
                 <tr key={item._id} className={item._id === selectedId ? 'selected' : ''} onClick={() => setSelectedId(item._id)} style={{ cursor: 'pointer' }}>
@@ -134,6 +134,17 @@ export default function Students() {
                           <span className={e.paid ? 'badge badge-active' : 'badge badge-expired'}>
                             {e.paid ? 'Si' : 'No'}
                           </span>
+                        </div>
+                      ))
+                    ) : (
+                      <span className="text-xs text-ink/40">-</span>
+                    )}
+                  </td>
+                  <td>
+                    {item.enrollments?.length > 0 ? (
+                      item.enrollments.map((e, i) => (
+                        <div key={i} style={{ marginBottom: 6 }}>
+                          <span className="text-xs font-semibold text-ink">{e.planName}</span>
                         </div>
                       ))
                     ) : (
@@ -173,7 +184,7 @@ export default function Students() {
                   </td>
                 </tr>
               ))}
-              {pageItems.length === 0 && <tr><td colSpan="7">Sin registros.</td></tr>}
+              {pageItems.length === 0 && <tr><td colSpan="8">Sin registros.</td></tr>}
             </tbody>
           </table>
         </div>

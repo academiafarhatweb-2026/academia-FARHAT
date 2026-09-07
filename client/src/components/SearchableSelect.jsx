@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 // A text input that filters a dropdown list as you type — for selects with
 // too many options to scroll through comfortably (e.g. picking one enrollment
 // out of dozens). Keeps the same value/onChange shape as a native <select>.
-export default function SearchableSelect({ id, options, value, onChange, placeholder = 'Buscar...' }) {
+export default function SearchableSelect({ id, options, value, onChange, placeholder = 'Buscar...', disabled = false }) {
   const [query, setQuery] = useState('');
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -31,17 +31,19 @@ export default function SearchableSelect({ id, options, value, onChange, placeho
         autoComplete="off"
         className="w-full"
         placeholder={placeholder}
+        disabled={disabled}
         value={open ? query : selected?.label || ''}
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
         }}
         onFocus={() => {
+          if (disabled) return;
           setQuery('');
           setOpen(true);
         }}
       />
-      {open && (
+      {open && !disabled && (
         <div className="searchable-select-options">
           {filtered.map((o) => (
             <div

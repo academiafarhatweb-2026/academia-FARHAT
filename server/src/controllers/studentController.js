@@ -16,10 +16,9 @@ async function list(req, res) {
   const students = await User.find({ role: 'student' }).sort({ createdAt: -1 });
   const studentIds = students.map((s) => s._id);
 
-  const enrollments = await Enrollment.find({ student: { $in: studentIds } }).populate({
-    path: 'classes',
-    populate: ['instrument', 'teacher'],
-  });
+  const enrollments = await Enrollment.find({ student: { $in: studentIds } })
+    .populate({ path: 'classes', populate: ['instrument', 'teacher'] })
+    .populate('plan');
   const enrollmentIds = enrollments.map((e) => e._id);
 
   const payments = await Payment.find({ enrollment: { $in: enrollmentIds } }).sort({ createdAt: -1 });
@@ -54,6 +53,7 @@ async function list(req, res) {
     const entries = entriesByStudent.get(student._id.toString()) || [];
     const summary = entries.map(({ enrollment: e, status, nextDueDate }) => ({
       _id: e._id,
+      planName: e.plan?.name || 'Plan eliminado',
       instrumentNames: [...new Set(e.classes.map((c) => c.instrument?.name).filter(Boolean))].join(', '),
       teacherNames: [...new Set(e.classes.map((c) => c.teacher?.name).filter(Boolean))].join(', '),
       schedule: e.classes.flatMap((c) => c.slots),

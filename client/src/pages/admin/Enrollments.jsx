@@ -7,6 +7,7 @@ import { useCrudModal } from '../../hooks/useCrudModal';
 import { usePagination } from '../../hooks/usePagination';
 import Modal from '../../components/Modal';
 import Pagination from '../../components/Pagination';
+import SearchableSelect from '../../components/SearchableSelect';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
 import { useConfirm } from '../../context/ConfirmContext';
@@ -64,6 +65,7 @@ export default function Enrollments() {
     formState: { errors },
   } = useForm({ resolver: zodResolver(enrollmentSchema), defaultValues: emptyValues });
   const formClasses = watch('classes');
+  const formStudent = watch('student');
 
   useEffect(() => {
     studentsApi.list().then(setStudents);
@@ -211,10 +213,14 @@ export default function Enrollments() {
           <form onSubmit={handleSubmit(onValid)} noValidate>
             <div className="field">
               <label htmlFor="enrollStudent">Alumno</label>
-              <select id="enrollStudent" disabled={mode === 'edit'} {...register('student')}>
-                <option value="">Seleccione un alumno</option>
-                {students.map((s) => <option key={s._id} value={s._id}>{s.name}</option>)}
-              </select>
+              <SearchableSelect
+                id="enrollStudent"
+                placeholder="Buscar alumno..."
+                disabled={mode === 'edit'}
+                options={students.map((s) => ({ value: s._id, label: s.name }))}
+                value={formStudent}
+                onChange={(v) => setValue('student', v, { shouldValidate: true })}
+              />
               {errors.student && <p className="error">{errors.student.message}</p>}
             </div>
 

@@ -1,4 +1,7 @@
 const Enrollment = require('../models/Enrollment');
+const Payment = require('../models/Payment');
+const User = require('../models/User');
+const { getExpirationStatus } = require('../services/expirationService');
 const { attachStatus: computeStatus } = require('../services/enrollmentStatusService');
 
 const POPULATE = [
@@ -12,10 +15,44 @@ async function attachStatus(enrollment) {
   return { ...enrollment.toObject(), expirationStatus: status, nextDueDate };
 }
 
+// Same per-enrollment status computation as enrollmentStatusService.attachStatus,
+// but batched: one Payment query for every enrollment instead of one query per
+// enrollment. list() was taking 2-4s with 50+ enrollments doing it one at a time.
+async function attachStatusBatch(enrollments) {
+  const ids = enrollments.map((e) => e._id);
+  const payments = await Payment.find({ enrollment: { $in: ids } }).sort({ createdAt: -1 });
+  const lastPaymentByEnrollment = new Map();
+  for (const p of payments) {
+    const key = p.enrollment.toString();
+    if (!lastPaymentByEnrollment.has(key)) lastPaymentByEnrollment.set(key, p); // sorted desc, first hit wins
+  }
+
+  const toExpireIds = [];
+  const studentIdsToExpire = new Set();
+  const results = enrollments.map((e) => {
+    const lastPayment = lastPaymentByEnrollment.get(e._id.toString());
+    const status = getExpirationStatus(lastPayment?.nextDueDate);
+    if (status === 'expired' && e.active) {
+      toExpireIds.push(e._id);
+      if (e.student?._id) studentIdsToExpire.add(e.student._id.toString());
+      e.active = false;
+    }
+    return { ...e.toObject(), expirationStatus: status, nextDueDate: lastPayment?.nextDueDate || null };
+  });
+
+  if (toExpireIds.length > 0) {
+    await Enrollment.updateMany({ _id: { $in: toExpireIds } }, { active: false });
+    if (studentIdsToExpire.size > 0) {
+      await User.updateMany({ _id: { $in: [...studentIdsToExpire] } }, { active: false });
+    }
+  }
+
+  return results;
+}
+
 async function list(req, res) {
   const enrollments = await Enrollment.find().populate(POPULATE).sort({ createdAt: -1 });
-  const withStatus = await Promise.all(enrollments.map(attachStatus));
-  res.json(withStatus);
+  res.json(await attachStatusBatch(enrollments));
 }
 
 async function getOne(req, res) {
@@ -26,7 +63,7 @@ async function getOne(req, res) {
 
 async function listMine(req, res) {
   const enrollments = await Enrollment.find({ student: req.user._id }).populate(POPULATE);
-  const withStatus = await Promise.all(enrollments.map(attachStatus));
+  const withStatus = await attachStatusBatch(enrollments);
   // Show active enrollments plus ones that auto-expired (they have payment
   // history, so the student sees the "vencido" warning) — but not dead,
   // never-paid duplicates an admin cancelled outright.
