@@ -1,7 +1,7 @@
-const { verifyToken } = require('../utils/jwt');
-const User = require('../models/User');
+import { verifyToken } from '../utils/jwt.js';
+import User from '../models/User.js';
 
-async function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   try {
     const token = req.cookies?.token;
     if (!token) return res.status(401).json({ message: 'No autenticado' });
@@ -12,14 +12,14 @@ async function requireAuth(req, res, next) {
 
     req.user = user;
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ message: 'No autenticado' });
   }
 }
 
 // For routes like /auth/me where "no session" is a normal, valid answer —
 // not an error — so it should never respond 401. Just leaves req.user unset.
-async function attachUserIfPresent(req, res, next) {
+export async function attachUserIfPresent(req, res, next) {
   try {
     const token = req.cookies?.token;
     if (token) {
@@ -33,7 +33,7 @@ async function attachUserIfPresent(req, res, next) {
   next();
 }
 
-function requireRole(...roles) {
+export function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ message: 'No autorizado' });
@@ -41,5 +41,3 @@ function requireRole(...roles) {
     next();
   };
 }
-
-module.exports = { requireAuth, requireRole, attachUserIfPresent };
