@@ -7,9 +7,13 @@ export function useCrud(api) {
 
   const reload = useCallback(async () => {
     setLoading(true);
-    const data = await api.list();
-    setItems(data);
-    setLoading(false);
+    try {
+      setItems(await api.list());
+    } catch {
+      // keep the previous list; the spinner must not stay on forever
+    } finally {
+      setLoading(false);
+    }
   }, [api]);
 
   useEffect(() => {

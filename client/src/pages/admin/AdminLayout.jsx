@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
 import Logo from '../../components/Logo';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 
 const links = [
   { to: '/admin/configuracion', label: 'Configuración' },
@@ -69,7 +69,9 @@ export default function AdminLayout() {
       </aside>
 
       <main className="admin-content">
-        <Outlet />
+        <Suspense fallback={null}>
+          <Outlet />
+        </Suspense>
       </main>
     </div>
   );
