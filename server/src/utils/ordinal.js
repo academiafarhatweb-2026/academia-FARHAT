@@ -3,8 +3,6 @@ const SPANISH_ORDINALS = [
   'Octava', 'Novena', 'Decima',
 ];
 
-function spanishOrdinal(n) {
+export function spanishOrdinal(n) {
   return SPANISH_ORDINALS[n - 1] || `Clase ${n}`;
 }
-
-module.exports = { spanishOrdinal };

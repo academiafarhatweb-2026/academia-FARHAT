@@ -1,8 +1,8 @@
-const { body } = require('express-validator');
-const validate = require('../middleware/validate');
-const { email } = require('./common');
+import { body } from 'express-validator';
+import validate from '../middleware/validate.js';
+import { email } from './common.js';
 
-const adminLoginValidators = [
+export const adminLoginValidators = [
   email(body('email'), { label: 'El email' }),
   body('password')
     .notEmpty()
@@ -12,6 +12,4 @@ const adminLoginValidators = [
   validate,
 ];
 
-const studentLoginValidators = [email(body('email'), { label: 'El email' }), validate];
-
-module.exports = { adminLoginValidators, studentLoginValidators };
+export const studentLoginValidators = [email(body('email'), { label: 'El email' }), validate];
