@@ -1,8 +1,11 @@
-const express = require('express');
-const { requireAuth, requireRole } = require('../middleware/auth');
-const asyncHandler = require('../utils/asyncHandler');
-const paymentController = require('../controllers/paymentController');
-const { createPaymentValidators, updatePaymentValidators } = require('../validators/paymentValidators');
+import express from 'express';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import * as paymentController from '../controllers/paymentController.js';
+import {
+  createPaymentValidators,
+  updatePaymentValidators,
+} from '../validators/paymentValidators.js';
 
 const router = express.Router();
 router.use(requireAuth, requireRole('admin'));
@@ -14,4 +17,4 @@ router.get('/:id/receipt', asyncHandler(paymentController.getReceipt));
 router.put('/:id', updatePaymentValidators, asyncHandler(paymentController.update));
 router.delete('/:id', asyncHandler(paymentController.remove));
 
-module.exports = router;
+export default router;
