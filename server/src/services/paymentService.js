@@ -1,9 +1,9 @@
-const Payment = require('../models/Payment');
-const Enrollment = require('../models/Enrollment');
-const User = require('../models/User');
-const { getNextOccurrences } = require('./occurrenceService');
+import Payment from '../models/Payment.js';
+import Enrollment from '../models/Enrollment.js';
+import User from '../models/User.js';
+import { getNextOccurrences } from './occurrenceService.js';
 
-async function createPayment({ enrollmentId, classesCount, amount }) {
+export async function createPayment({ enrollmentId, classesCount, amount }) {
   const enrollment = await Enrollment.findById(enrollmentId)
     .populate({ path: 'classes', populate: 'instrument' })
     .populate('plan')
@@ -16,6 +16,10 @@ async function createPayment({ enrollmentId, classesCount, amount }) {
   const slots = enrollment.classes.flatMap((c) =>
     c.slots.map((s) => ({ day: s.day, startHour: s.startHour, endHour: s.endHour, instrumentName: c.instrument?.name || 'Instrumento eliminado' }))
   );
+
+  // Without a single weekly slot there are no class dates to generate (the
+  // classes were deleted or never had a schedule), so nothing can be billed.
+  if (slots.length === 0) throw new Error('Enrollment has no schedule');
 
   const lastPayment = await Payment.findOne({ enrollment: enrollmentId }).sort({ createdAt: -1 });
   const anchorDate = lastPayment
@@ -63,5 +67,3 @@ async function createPayment({ enrollmentId, classesCount, amount }) {
 
   return { payment, enrollment };
 }
-
-module.exports = { createPayment };
