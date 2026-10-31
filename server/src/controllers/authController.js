@@ -1,6 +1,6 @@
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
-const { signToken } = require('../utils/jwt');
+import bcrypt from 'bcryptjs';
+import User from '../models/User.js';
+import { signToken } from '../utils/jwt.js';
 
 const isProd = process.env.NODE_ENV === 'production';
 const cookieOptions = {
@@ -10,7 +10,7 @@ const cookieOptions = {
   maxAge: 7 * 24 * 60 * 60 * 1000,
 };
 
-async function login(req, res) {
+export async function login(req, res) {
   const { email, password } = req.body;
   if (!email || !password) {
     return res.status(400).json({ message: 'El email y la contraseña son requeridos' });
@@ -28,7 +28,7 @@ async function login(req, res) {
 }
 
 // Students have no password: they only prove their email to get in.
-async function studentLogin(req, res) {
+export async function studentLogin(req, res) {
   const { email } = req.body;
   if (!email) return res.status(400).json({ message: 'El email es requerido' });
 
@@ -40,15 +40,15 @@ async function studentLogin(req, res) {
   res.json({ user: { id: user._id, name: user.name, email: user.email, role: user.role } });
 }
 
-async function logout(req, res) {
-  res.clearCookie('token', cookieOptions);
+export async function logout(req, res) {
+  // maxAge must not be passed here: Express 4 would turn it into a fresh 7-day expiry.
+  const { maxAge: _maxAge, ...clearOptions } = cookieOptions;
+  res.clearCookie('token', clearOptions);
   res.json({ message: 'Sesión cerrada' });
 }
 
-async function me(req, res) {
+export async function me(req, res) {
   if (!req.user) return res.json({ user: null });
   const { _id, name, email, role, phone } = req.user;
   res.json({ user: { id: _id, name, email, role, phone } });
 }
-
-module.exports = { login, studentLogin, logout, me };
