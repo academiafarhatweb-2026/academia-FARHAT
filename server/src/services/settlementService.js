@@ -1,6 +1,6 @@
-const Payment = require('../models/Payment');
-const Enrollment = require('../models/Enrollment');
-const Settlement = require('../models/Settlement');
+import Payment from '../models/Payment.js';
+import Enrollment from '../models/Enrollment.js';
+import Settlement from '../models/Settlement.js';
 
 function countDatesInRange(dates, start, end) {
   return dates.filter((d) => d >= start && d < end).length;
@@ -8,7 +8,7 @@ function countDatesInRange(dates, start, end) {
 
 // Attributes each enrollment to the teacher/instrument of its first fixed class.
 // Assumes an enrollment's classes share one teacher+instrument (typical case in this academy).
-async function computeSettlementLines(teacher, periodMonth, periodYear) {
+export async function computeSettlementLines(teacher, periodMonth, periodYear) {
   const start = new Date(periodYear, periodMonth - 1, 1);
   const end = new Date(periodYear, periodMonth, 1);
 
@@ -59,7 +59,7 @@ async function computeSettlementLines(teacher, periodMonth, periodYear) {
   return { lines, totalAmount };
 }
 
-async function generateSettlement(teacher, periodMonth, periodYear) {
+export async function generateSettlement(teacher, periodMonth, periodYear) {
   const { lines, totalAmount } = await computeSettlementLines(teacher, periodMonth, periodYear);
 
   const settlement = await Settlement.findOneAndUpdate(
@@ -70,5 +70,3 @@ async function generateSettlement(teacher, periodMonth, periodYear) {
 
   return settlement;
 }
-
-module.exports = { generateSettlement, computeSettlementLines };
