@@ -1,6 +1,6 @@
-const Teacher = require('../models/Teacher');
-const Settlement = require('../models/Settlement');
-const { generateSettlement, computeSettlementLines } = require('../services/settlementService');
+import Teacher from '../models/Teacher.js';
+import Settlement from '../models/Settlement.js';
+import { generateSettlement, computeSettlementLines } from '../services/settlementService.js';
 
 const POPULATE = [
   { path: 'teacher' },
@@ -9,7 +9,7 @@ const POPULATE = [
   { path: 'lines.plan' },
 ];
 
-async function generate(req, res) {
+export async function generate(req, res) {
   const { teacherId, periodMonth, periodYear } = req.body;
   if (!teacherId || !periodMonth || !periodYear) {
     return res.status(400).json({ message: 'Profesor, mes y año son requeridos' });
@@ -23,7 +23,7 @@ async function generate(req, res) {
   res.json(populated);
 }
 
-async function list(req, res) {
+export async function list(req, res) {
   const { periodMonth, periodYear, teacherId } = req.query;
   const filter = {};
   if (periodMonth) filter.periodMonth = Number(periodMonth);
@@ -43,7 +43,7 @@ async function list(req, res) {
   res.json(settlements.filter((s) => s.teacher));
 }
 
-async function getOne(req, res) {
+export async function getOne(req, res) {
   const settlement = await Settlement.findById(req.params.id).populate(POPULATE);
   if (!settlement) return res.status(404).json({ message: 'No encontrado' });
   res.json(settlement);
@@ -88,7 +88,7 @@ async function updateIdentity(req, res, existing) {
 // Lets the admin correct a generated line by hand (a negotiated rate, a partial
 // month, etc.) — the total is always recomputed server-side from pricePerClass
 // and classesCount, never trusted from the client.
-async function update(req, res) {
+export async function update(req, res) {
   const { lines, teacherId, periodMonth, periodYear } = req.body;
 
   if (teacherId || periodMonth != null || periodYear != null) {
@@ -116,10 +116,8 @@ async function update(req, res) {
   res.json(settlement);
 }
 
-async function remove(req, res) {
+export async function remove(req, res) {
   const settlement = await Settlement.findByIdAndDelete(req.params.id);
   if (!settlement) return res.status(404).json({ message: 'No encontrado' });
   res.json({ message: 'Eliminado' });
 }
-
-module.exports = { generate, list, getOne, update, remove };
