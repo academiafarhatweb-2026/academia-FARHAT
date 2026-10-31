@@ -1,8 +1,8 @@
-const express = require('express');
-const { requireAuth, requireRole } = require('../middleware/auth');
-const upload = require('../middleware/upload');
-const cloudinary = require('../config/cloudinary');
-const asyncHandler = require('../utils/asyncHandler');
+import express from 'express';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import upload from '../middleware/upload.js';
+import cloudinary from '../config/cloudinary.js';
+import asyncHandler from '../utils/asyncHandler.js';
 
 const router = express.Router();
 
@@ -27,4 +27,4 @@ router.post(
   })
 );
 
-module.exports = router;
+export default router;

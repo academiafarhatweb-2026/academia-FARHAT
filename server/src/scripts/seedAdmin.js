@@ -1,7 +1,7 @@
-require('dotenv').config();
-const bcrypt = require('bcryptjs');
-const connectDB = require('../config/db');
-const User = require('../models/User');
+import '../config/env.js';
+import bcrypt from 'bcryptjs';
+import connectDB from '../config/db.js';
+import User from '../models/User.js';
 
 async function seedAdmin() {
   await connectDB();

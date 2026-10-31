@@ -1,12 +1,12 @@
 // Loads the real catalog data supplied by the academy (instruments, teachers with their
 // per-instrument commission %, weekly fixed-class schedule, and pricing plans) from
 // "CLASES 11.pdf", the "Clases" screenshots, and "Liquidacion Hernan.pdf".
-require('dotenv').config();
-const connectDB = require('../config/db');
-const Instrument = require('../models/Instrument');
-const Teacher = require('../models/Teacher');
-const FixedClass = require('../models/FixedClass');
-const Plan = require('../models/Plan');
+import '../config/env.js';
+import connectDB from '../config/db.js';
+import Instrument from '../models/Instrument.js';
+import Teacher from '../models/Teacher.js';
+import FixedClass from '../models/FixedClass.js';
+import Plan from '../models/Plan.js';
 
 const DAY = { LUNES: 1, MARTES: 2, MIERCOLES: 3, JUEVES: 4, VIERNES: 5, SABADO: 6 };
 
