@@ -1,13 +1,30 @@
-const Enrollment = require('../models/Enrollment');
-const Payment = require('../models/Payment');
-const User = require('../models/User');
-const { getExpirationStatus } = require('../services/expirationService');
-const { attachStatus: computeStatus } = require('../services/enrollmentStatusService');
+import Enrollment from '../models/Enrollment.js';
+import Payment from '../models/Payment.js';
+import { getExpirationStatus } from '../services/expirationService.js';
+import {
+  attachStatus as computeStatus,
+  deactivateStudentsWithoutActiveEnrollments,
+} from '../services/enrollmentStatusService.js';
 
 const POPULATE = [
   { path: 'student', select: 'name email phone' },
   { path: 'plan' },
   { path: 'classes', populate: ['instrument', 'teacher'] },
+];
+
+// What a student may see about their own enrollments: never the teacher's
+// contact details or commission rates, nor other people's data.
+const STUDENT_POPULATE = [
+  { path: 'student', select: 'name' },
+  { path: 'plan', select: 'name classesIncluded' },
+  {
+    path: 'classes',
+    select: 'instrument teacher slots',
+    populate: [
+      { path: 'instrument', select: 'name' },
+      { path: 'teacher', select: 'name' },
+    ],
+  },
 ];
 
 async function attachStatus(enrollment) {
@@ -42,27 +59,27 @@ async function attachStatusBatch(enrollments) {
 
   if (toExpireIds.length > 0) {
     await Enrollment.updateMany({ _id: { $in: toExpireIds } }, { active: false });
-    if (studentIdsToExpire.size > 0) {
-      await User.updateMany({ _id: { $in: [...studentIdsToExpire] } }, { active: false });
-    }
+    await deactivateStudentsWithoutActiveEnrollments([...studentIdsToExpire]);
   }
 
   return results;
 }
 
-async function list(req, res) {
+export async function list(req, res) {
   const enrollments = await Enrollment.find().populate(POPULATE).sort({ createdAt: -1 });
   res.json(await attachStatusBatch(enrollments));
 }
 
-async function getOne(req, res) {
+export async function getOne(req, res) {
   const enrollment = await Enrollment.findById(req.params.id).populate(POPULATE);
   if (!enrollment) return res.status(404).json({ message: 'No encontrado' });
   res.json(await attachStatus(enrollment));
 }
 
-async function listMine(req, res) {
-  const enrollments = await Enrollment.find({ student: req.user._id }).populate(POPULATE);
+export async function listMine(req, res) {
+  const enrollments = await Enrollment.find({ student: req.user._id })
+    .select('student classes plan enrollmentDate active')
+    .populate(STUDENT_POPULATE);
   const withStatus = await attachStatusBatch(enrollments);
   // Show active enrollments plus ones that auto-expired (they have payment
   // history, so the student sees the "vencido" warning) — but not dead,
@@ -71,13 +88,13 @@ async function listMine(req, res) {
   res.json(visible);
 }
 
-async function create(req, res) {
+export async function create(req, res) {
   const enrollment = await Enrollment.create(req.body);
   const populated = await Enrollment.findById(enrollment._id).populate(POPULATE);
   res.status(201).json(populated);
 }
 
-async function update(req, res) {
+export async function update(req, res) {
   const enrollment = await Enrollment.findByIdAndUpdate(req.params.id, req.body, {
     new: true,
     runValidators: true,
@@ -86,16 +103,14 @@ async function update(req, res) {
   res.json(enrollment);
 }
 
-async function remove(req, res) {
+export async function remove(req, res) {
   const enrollment = await Enrollment.findByIdAndUpdate(req.params.id, { active: false }, { new: true });
   if (!enrollment) return res.status(404).json({ message: 'No encontrado' });
   res.json({ message: 'Desactivado' });
 }
 
-async function hardRemove(req, res) {
+export async function hardRemove(req, res) {
   const enrollment = await Enrollment.findByIdAndDelete(req.params.id);
   if (!enrollment) return res.status(404).json({ message: 'No encontrado' });
   res.json({ message: 'Eliminado' });
 }
-
-module.exports = { list, getOne, listMine, create, update, remove, hardRemove };
