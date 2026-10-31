@@ -48,7 +48,8 @@ export default function PublicClassModal({ instrument, schedule, whatsappNumber,
         {instrument.images?.[0] ? (
           <div className="relative h-64 w-full overflow-hidden bg-stage sm:h-72">
             <img
-              src={assetUrl(instrument.images[0])}
+              src={assetUrl(instrument.images[0], { width: 1000 })}
+              crossOrigin="anonymous"
               alt={instrument.name}
               className="absolute inset-0 h-full w-full object-cover object-top"
             />
