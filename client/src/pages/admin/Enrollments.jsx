@@ -10,7 +10,7 @@ import Pagination from '../../components/Pagination';
 import SearchableSelect from '../../components/SearchableSelect';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 import { enrollmentSchema } from '../../schemas';
 
 const emptyValues = { student: '', plan: '', customValue: '', classes: [], enrollmentDate: new Date().toISOString().slice(0, 10) };

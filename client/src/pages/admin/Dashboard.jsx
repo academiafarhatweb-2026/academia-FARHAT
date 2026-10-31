@@ -44,11 +44,13 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([enrollmentsApi.list(), studentsApi.list()]).then(([e, s]) => {
-      setEnrollments(e);
-      setStudents(s);
-      setLoading(false);
-    });
+    Promise.all([enrollmentsApi.list(), studentsApi.list()])
+      .then(([e, s]) => {
+        setEnrollments(e);
+        setStudents(s);
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <p>Cargando...</p>;
