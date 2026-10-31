@@ -1,6 +1,3 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
-const SERVER_ORIGIN = API_URL.replace(/\/api\/?$/, '');
-
 const CLOUDINARY_UPLOAD = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/)(.+)$/;
 
 // Uploads are stored at their original size (often multi-MB phone photos).
@@ -12,7 +9,7 @@ const CLOUDINARY_UPLOAD = /^(https:\/\/res\.cloudinary\.com\/[^/]+\/image\/uploa
 // cookies, so browser tracking prevention (Edge) has nothing to block or warn about.
 export function assetUrl(path, { width, blur = false } = {}) {
   if (!path) return '';
-  if (!/^https?:\/\//.test(path)) return `${SERVER_ORIGIN}${path}`;
+  if (!/^https?:\/\//.test(path)) return path;
 
   const match = path.match(CLOUDINARY_UPLOAD);
   if (!match) return path;
