@@ -35,7 +35,7 @@ export default function ImageUploader({ value = [], onChange, label }) {
         <div className="grid mb-16">
           {value.map((url, i) => (
             <div key={i} className="relative">
-              <img src={assetUrl(url)} alt="" className="aspect-4/3 w-full rounded-xl object-cover" />
+              <img src={assetUrl(url, { width: 400 })} crossOrigin="anonymous" alt="" loading="lazy" className="aspect-4/3 w-full rounded-xl object-cover" />
               <button
                 type="button"
                 className="btn danger absolute right-2 top-2 px-2 py-1 text-xs"

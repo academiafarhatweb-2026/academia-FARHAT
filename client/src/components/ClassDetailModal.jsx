@@ -5,7 +5,7 @@ import ClassForm from './ClassForm';
 import ExpirationBadge from './ExpirationBadge';
 import { classesApi, studentsApi, plansApi } from '../api/catalog';
 import { enrollmentsApi } from '../api/enrollments';
-import { useConfirm } from '../context/ConfirmContext';
+import { useConfirm } from '../hooks/useConfirm';
 
 export default function ClassDetailModal({ classItem, instruments, teachers, onClose, onChanged }) {
   const [enrollments, setEnrollments] = useState([]);
