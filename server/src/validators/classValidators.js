@@ -1,8 +1,8 @@
-const { body } = require('express-validator');
-const validate = require('../middleware/validate');
-const { number } = require('./common');
+import { body } from 'express-validator';
+import validate from '../middleware/validate.js';
+import { number } from './common.js';
 
-const classValidators = [
+export const classValidators = [
   body('instrument').notEmpty().withMessage('El instrumento es obligatorio.'),
   body('teacher').notEmpty().withMessage('El profesor es obligatorio.'),
   body('slots').isArray({ min: 1 }).withMessage('Agregá al menos un horario.'),
@@ -17,5 +17,3 @@ const classValidators = [
   }),
   validate,
 ];
-
-module.exports = { classValidators };

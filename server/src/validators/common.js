@@ -1,12 +1,12 @@
 // Shared regex + field builders for express-validator chains — mirrors the
 // client-side rules in client/src/schemas so both sides agree on what's valid.
 
-const PERSON_NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$/;
-const PHONE_RE = /^\+?[0-9 -]{6,20}$/;
-const WHATSAPP_RE = /^[0-9]{8,15}$/;
-const URL_RE = /^https?:\/\/.+/i;
+export const PERSON_NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$/;
+export const PHONE_RE = /^\+?[0-9 -]{6,20}$/;
+export const WHATSAPP_RE = /^[0-9]{8,15}$/;
+export const URL_RE = /^https?:\/\/.+/i;
 
-function personName(chain, { label = 'El nombre', required = true } = {}) {
+export function personName(chain, { label = 'El nombre', required = true } = {}) {
   let c = chain.trim();
   c = required ? c.notEmpty().withMessage(`${label} es obligatorio.`) : c.optional({ checkFalsy: true });
   return c
@@ -16,7 +16,7 @@ function personName(chain, { label = 'El nombre', required = true } = {}) {
     .withMessage(`${label} solo puede tener letras y espacios, sin números.`);
 }
 
-function phone(chain, { label = 'El teléfono', required = false } = {}) {
+export function phone(chain, { label = 'El teléfono', required = false } = {}) {
   let c = chain.trim();
   c = required ? c.notEmpty().withMessage(`${label} es obligatorio.`) : c.optional({ checkFalsy: true });
   return c
@@ -26,7 +26,7 @@ function phone(chain, { label = 'El teléfono', required = false } = {}) {
     .withMessage(`${label} solo puede tener números, espacios y guiones. Ej: +54 9 3812 07-8328`);
 }
 
-function whatsapp(chain, { label = 'El número de WhatsApp', required = false } = {}) {
+export function whatsapp(chain, { label = 'El número de WhatsApp', required = false } = {}) {
   let c = chain.trim();
   c = required ? c.notEmpty().withMessage(`${label} es obligatorio.`) : c.optional({ checkFalsy: true });
   return c
@@ -36,7 +36,7 @@ function whatsapp(chain, { label = 'El número de WhatsApp', required = false } 
     .withMessage(`${label} solo puede tener números, sin + ni espacios. Ej: 5493812078328`);
 }
 
-function email(chain, { label = 'El email', required = true, max = 100 } = {}) {
+export function email(chain, { label = 'El email', required = true, max = 100 } = {}) {
   let c = chain.trim();
   c = required ? c.notEmpty().withMessage(`${label} es obligatorio.`) : c.optional({ checkFalsy: true });
   return c
@@ -46,7 +46,7 @@ function email(chain, { label = 'El email', required = true, max = 100 } = {}) {
     .withMessage(`${label} debe tener como máximo ${max} caracteres.`);
 }
 
-function url(chain, { label = 'El link', required = false, max = 200 } = {}) {
+export function url(chain, { label = 'El link', required = false, max = 200 } = {}) {
   let c = chain.trim();
   c = required ? c.notEmpty().withMessage(`${label} es obligatorio.`) : c.optional({ checkFalsy: true });
   return c
@@ -56,7 +56,7 @@ function url(chain, { label = 'El link', required = false, max = 200 } = {}) {
     .withMessage(`${label} debe ser una URL válida (empieza con http:// o https://).`);
 }
 
-function text(chain, { label = 'Este campo', required = true, min, max } = {}) {
+export function text(chain, { label = 'Este campo', required = true, min, max } = {}) {
   let c = chain.trim();
   c = required ? c.notEmpty().withMessage(`${label} es obligatorio.`) : c.optional({ checkFalsy: true });
   if (min != null) c = c.isLength({ min }).withMessage(`${label} debe tener al menos ${min} caracteres.`);
@@ -66,7 +66,7 @@ function text(chain, { label = 'Este campo', required = true, min, max } = {}) {
 
 // A numeric field: required, non-negative by default, no letters allowed
 // (isFloat/isInt already reject non-numeric strings on their own).
-function number(chain, { label = 'Este campo', required = true, min = 0, max, integer = false } = {}) {
+export function number(chain, { label = 'Este campo', required = true, min = 0, max, integer = false } = {}) {
   let c = required ? chain.notEmpty().withMessage(`${label} es obligatorio.`) : chain.optional({ checkFalsy: true });
   const validator = integer ? 'isInt' : 'isFloat';
   const opts = {};
@@ -79,5 +79,3 @@ function number(chain, { label = 'Este campo', required = true, min = 0, max, in
   });
   return c;
 }
-
-module.exports = { PERSON_NAME_RE, PHONE_RE, WHATSAPP_RE, URL_RE, personName, phone, whatsapp, email, url, text, number };
