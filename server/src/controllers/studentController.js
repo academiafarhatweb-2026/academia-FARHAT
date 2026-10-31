@@ -1,10 +1,11 @@
-const User = require('../models/User');
-const Enrollment = require('../models/Enrollment');
-const Payment = require('../models/Payment');
-const { getExpirationStatus } = require('../services/expirationService');
+import User from '../models/User.js';
+import Enrollment from '../models/Enrollment.js';
+import Payment from '../models/Payment.js';
+import { getExpirationStatus } from '../services/expirationService.js';
+import { deactivateStudentsWithoutActiveEnrollments } from '../services/enrollmentStatusService.js';
 
 function omitPasswordHash(doc) {
-  const { passwordHash, ...safe } = doc.toObject();
+  const { passwordHash: _passwordHash, ...safe } = doc.toObject();
   return safe;
 }
 
@@ -12,7 +13,7 @@ function omitPasswordHash(doc) {
 // but computed from data already fetched in bulk by list() below — doing this
 // one enrollment/payment at a time (N+1 queries) made /api/students take several
 // seconds once there were a couple dozen students, so list() batches it instead.
-async function list(req, res) {
+export async function list(req, res) {
   const students = await User.find({ role: 'student' }).sort({ createdAt: -1 });
   const studentIds = students.map((s) => s._id);
 
@@ -46,7 +47,14 @@ async function list(req, res) {
 
   if (toExpireIds.length > 0) {
     await Enrollment.updateMany({ _id: { $in: toExpireIds } }, { active: false });
-    await User.updateMany({ _id: { $in: [...studentIdsToExpire] } }, { active: false });
+    await deactivateStudentsWithoutActiveEnrollments([...studentIdsToExpire]);
+    // Keep the in-memory list consistent with what was just written.
+    const stillActive = new Set(
+      (await User.find({ _id: { $in: [...studentIdsToExpire] }, active: true }).select('_id')).map((u) => u._id.toString())
+    );
+    students.forEach((s) => {
+      if (studentIdsToExpire.has(s._id.toString()) && !stillActive.has(s._id.toString())) s.active = false;
+    });
   }
 
   const withSummary = students.map((student) => {
@@ -72,13 +80,13 @@ async function list(req, res) {
   res.json(withSummary);
 }
 
-async function getOne(req, res) {
+export async function getOne(req, res) {
   const student = await User.findOne({ _id: req.params.id, role: 'student' }).select('-passwordHash');
   if (!student) return res.status(404).json({ message: 'No encontrado' });
   res.json(student);
 }
 
-async function create(req, res) {
+export async function create(req, res) {
   const { name, email, phone } = req.body;
   if (!name || !email) {
     return res.status(400).json({ message: 'El nombre y el email son requeridos' });
@@ -97,7 +105,7 @@ async function create(req, res) {
   res.status(201).json(omitPasswordHash(student));
 }
 
-async function update(req, res) {
+export async function update(req, res) {
   const { name, email, phone, active } = req.body;
 
   const update = { name, phone, active };
@@ -123,7 +131,7 @@ async function update(req, res) {
   res.json(omitPasswordHash(student));
 }
 
-async function remove(req, res) {
+export async function remove(req, res) {
   const student = await User.findOneAndUpdate(
     { _id: req.params.id, role: 'student' },
     { active: false },
@@ -136,10 +144,8 @@ async function remove(req, res) {
   res.json({ message: 'Desactivado' });
 }
 
-async function hardRemove(req, res) {
+export async function hardRemove(req, res) {
   const student = await User.findOneAndDelete({ _id: req.params.id, role: 'student' });
   if (!student) return res.status(404).json({ message: 'No encontrado' });
   res.json({ message: 'Eliminado' });
 }
-
-module.exports = { list, getOne, create, update, remove, hardRemove };

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const slotSchema = new mongoose.Schema(
   {
@@ -19,4 +19,4 @@ const fixedClassSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('FixedClass', fixedClassSchema);
+export default mongoose.model('FixedClass', fixedClassSchema);

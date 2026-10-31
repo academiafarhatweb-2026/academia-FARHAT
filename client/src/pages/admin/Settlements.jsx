@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { teachersApi } from '../../api/catalog';
 import { settlementsApi } from '../../api/settlements';
 import Modal from '../../components/Modal';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 import { settlementGenerateSchema, settlementLineEditSchema, settlementIdentityEditSchema } from '../../schemas';
 
 const now = new Date();
@@ -65,14 +65,15 @@ export default function Settlements() {
   } = useForm({ resolver: zodResolver(settlementIdentityEditSchema), defaultValues: { teacherId: '', periodMonth: '', periodYear: '' } });
 
   function reloadSettlements() {
-    return settlementsApi.list().then((data) => {
-      setSettlements(data);
-      setLoadingSettlements(false);
-    });
+    return settlementsApi
+      .list()
+      .then(setSettlements)
+      .catch(() => {})
+      .finally(() => setLoadingSettlements(false));
   }
 
   useEffect(() => {
-    teachersApi.list().then(setTeachers);
+    teachersApi.list().then(setTeachers).catch(() => {});
     reloadSettlements();
   }, []);
 

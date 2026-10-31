@@ -1,7 +1,10 @@
-const Instrument = require('../models/Instrument');
-const createCrudController = require('../controllers/crudFactory');
-const buildCrudRouter = require('../utils/crudRouter');
-const { createInstrumentValidators, updateInstrumentValidators } = require('../validators/instrumentValidators');
+import Instrument from '../models/Instrument.js';
+import createCrudController from '../controllers/crudFactory.js';
+import buildCrudRouter from '../utils/crudRouter.js';
+import {
+  createInstrumentValidators,
+  updateInstrumentValidators,
+} from '../validators/instrumentValidators.js';
 
 const base = createCrudController(Instrument);
 
@@ -12,7 +15,7 @@ async function list(req, res) {
   res.json(docs);
 }
 
-module.exports = buildCrudRouter(
+export default buildCrudRouter(
   { ...base, list },
   { create: createInstrumentValidators, update: updateInstrumentValidators }
 );

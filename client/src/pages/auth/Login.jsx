@@ -55,7 +55,7 @@ export default function Login() {
   return (
     <div className="grain relative flex min-h-svh items-center justify-center overflow-hidden bg-stage px-5 py-16">
       {heroImage && (
-        <img src={assetUrl(heroImage)} alt="" className="absolute inset-0 h-full w-full scale-125 object-cover" />
+        <img src={assetUrl(heroImage, { width: 1600 })} crossOrigin="anonymous" alt="" decoding="async" className="absolute inset-0 h-full w-full scale-125 object-cover" />
       )}
       <div className="absolute inset-0 bg-gradient-to-b from-stage/55 via-stage/70 to-stage" />
 

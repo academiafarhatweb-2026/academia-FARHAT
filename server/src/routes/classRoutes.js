@@ -1,9 +1,9 @@
-const FixedClass = require('../models/FixedClass');
-const createCrudController = require('../controllers/crudFactory');
-const buildCrudRouter = require('../utils/crudRouter');
-const { classValidators } = require('../validators/classValidators');
+import FixedClass from '../models/FixedClass.js';
+import createCrudController from '../controllers/crudFactory.js';
+import buildCrudRouter from '../utils/crudRouter.js';
+import { classValidators } from '../validators/classValidators.js';
 
-module.exports = buildCrudRouter(createCrudController(FixedClass, ['instrument', 'teacher']), {
+export default buildCrudRouter(createCrudController(FixedClass, ['instrument', 'teacher']), {
   create: classValidators,
   update: classValidators,
 });

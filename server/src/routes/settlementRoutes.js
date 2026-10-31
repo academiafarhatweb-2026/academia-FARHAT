@@ -1,8 +1,11 @@
-const express = require('express');
-const { requireAuth, requireRole } = require('../middleware/auth');
-const asyncHandler = require('../utils/asyncHandler');
-const settlementController = require('../controllers/settlementController');
-const { generateSettlementValidators, updateSettlementValidators } = require('../validators/settlementValidators');
+import express from 'express';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import * as settlementController from '../controllers/settlementController.js';
+import {
+  generateSettlementValidators,
+  updateSettlementValidators,
+} from '../validators/settlementValidators.js';
 
 const router = express.Router();
 router.use(requireAuth, requireRole('admin'));
@@ -13,4 +16,4 @@ router.post('/generate', generateSettlementValidators, asyncHandler(settlementCo
 router.put('/:id', updateSettlementValidators, asyncHandler(settlementController.update));
 router.delete('/:id', asyncHandler(settlementController.remove));
 
-module.exports = router;
+export default router;

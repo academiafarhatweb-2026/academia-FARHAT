@@ -1,6 +1,5 @@
-import { createContext, useCallback, useContext, useRef, useState } from 'react';
-
-const ConfirmContext = createContext(null);
+import { useCallback, useRef, useState } from 'react';
+import { ConfirmContext } from './confirmContextValue';
 
 // App-wide replacement for window.confirm — styled like the rest of the app
 // instead of the browser's native dialog. useConfirm() returns an async
@@ -48,8 +47,4 @@ export function ConfirmProvider({ children }) {
       )}
     </ConfirmContext.Provider>
   );
-}
-
-export function useConfirm() {
-  return useContext(ConfirmContext);
 }

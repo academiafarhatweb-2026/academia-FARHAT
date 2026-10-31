@@ -1,4 +1,4 @@
-function getExpirationStatus(nextDueDate, warningDays = Number(process.env.EXPIRATION_WARNING_DAYS) || 5) {
+export function getExpirationStatus(nextDueDate, warningDays = Number(process.env.EXPIRATION_WARNING_DAYS) || 5) {
   if (!nextDueDate) return 'no_payment';
 
   const now = new Date();
@@ -8,5 +8,3 @@ function getExpirationStatus(nextDueDate, warningDays = Number(process.env.EXPIR
   if (diffDays <= warningDays) return 'expiring_soon';
   return 'active';
 }
-
-module.exports = { getExpirationStatus };

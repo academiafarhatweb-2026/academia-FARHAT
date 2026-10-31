@@ -4,7 +4,7 @@ import { useCrudModal } from '../../hooks/useCrudModal';
 import Modal from '../../components/Modal';
 import ClassForm from '../../components/ClassForm';
 import { dayLabel } from '../../utils/days';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 
 // Merges same-day entries (e.g. two separate 17-19 / 19-21 records for the
 // same teacher+instrument+day) into a single "Martes 17-19, 19-21" line,

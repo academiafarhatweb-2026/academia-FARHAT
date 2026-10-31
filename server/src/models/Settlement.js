@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const lineSchema = new mongoose.Schema(
   {
@@ -30,4 +30,4 @@ const settlementSchema = new mongoose.Schema(
 
 settlementSchema.index({ teacher: 1, periodMonth: 1, periodYear: 1 }, { unique: true });
 
-module.exports = mongoose.model('Settlement', settlementSchema);
+export default mongoose.model('Settlement', settlementSchema);

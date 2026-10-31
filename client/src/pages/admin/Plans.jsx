@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { plansApi } from '../../api/catalog';
 import { useCrudModal } from '../../hooks/useCrudModal';
 import Modal from '../../components/Modal';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 import { planSchema } from '../../schemas';
 
 const emptyValues = { name: '', value: '', classesIncluded: '' };

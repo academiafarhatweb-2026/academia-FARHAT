@@ -1,8 +1,8 @@
-const { body } = require('express-validator');
-const validate = require('../middleware/validate');
-const { number } = require('./common');
+import { body } from 'express-validator';
+import validate from '../middleware/validate.js';
+import { number } from './common.js';
 
-const generateSettlementValidators = [
+export const generateSettlementValidators = [
   body('teacherId').notEmpty().withMessage('El profesor es obligatorio.'),
   number(body('periodMonth'), { label: 'El mes', min: 1, max: 12, integer: true }),
   number(body('periodYear'), { label: 'El año', min: 2000, max: 2100, integer: true }),
@@ -12,7 +12,7 @@ const generateSettlementValidators = [
 // PUT /settlements/:id handles two shapes: editing teacher/period (identity,
 // recomputes lines) or hand-correcting the lines array — both optional here
 // since the controller decides which branch based on what's present.
-const updateSettlementValidators = [
+export const updateSettlementValidators = [
   body('teacherId').optional().notEmpty().withMessage('El profesor es obligatorio.'),
   number(body('periodMonth'), { label: 'El mes', required: false, min: 1, max: 12, integer: true }),
   number(body('periodYear'), { label: 'El año', required: false, min: 2000, max: 2100, integer: true }),
@@ -23,5 +23,3 @@ const updateSettlementValidators = [
   number(body('lines.*.classesCount'), { label: 'La cantidad de clases', required: false, min: 0, integer: true }),
   validate,
 ];
-
-module.exports = { generateSettlementValidators, updateSettlementValidators };

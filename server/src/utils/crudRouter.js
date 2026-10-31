@@ -1,11 +1,11 @@
-const express = require('express');
-const { requireAuth, requireRole } = require('../middleware/auth');
-const asyncHandler = require('./asyncHandler');
+import express from 'express';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import asyncHandler from './asyncHandler.js';
 
 // Wires standard list/getOne/create/update/remove handlers behind admin-only auth.
 // `validators` optionally supplies { create: [...], update: [...] } express-validator
 // chains (each ending in the shared `validate` middleware) to run before create/update.
-function buildCrudRouter(controller, validators = {}) {
+export default function buildCrudRouter(controller, validators = {}) {
   const router = express.Router();
   router.use(requireAuth, requireRole('admin'));
 
@@ -17,5 +17,3 @@ function buildCrudRouter(controller, validators = {}) {
 
   return router;
 }
-
-module.exports = buildCrudRouter;

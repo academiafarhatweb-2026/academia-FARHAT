@@ -26,7 +26,7 @@ export default function HomeEditor() {
 
   useEffect(() => {
     reloadInstruments();
-    homeApi.get().then((content) => {
+    homeApi.get({ fresh: true }).then((content) => {
       setHeroImages(content.heroImages || []);
       reset({
         address: content.address || '',

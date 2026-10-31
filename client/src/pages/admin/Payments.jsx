@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { enrollmentsApi } from '../../api/enrollments';
 import { paymentsApi } from '../../api/payments';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 import { usePagination } from '../../hooks/usePagination';
 import Modal from '../../components/Modal';
 import Pagination from '../../components/Pagination';
@@ -46,14 +46,15 @@ export default function Payments() {
   } = useForm({ resolver: zodResolver(paymentEditSchema), defaultValues: { amount: '', classesCount: '' } });
 
   function reloadPayments() {
-    return paymentsApi.list().then((data) => {
-      setPayments(data);
-      setLoadingPayments(false);
-    });
+    return paymentsApi
+      .list()
+      .then(setPayments)
+      .catch(() => {})
+      .finally(() => setLoadingPayments(false));
   }
 
   useEffect(() => {
-    enrollmentsApi.list().then(setEnrollments);
+    enrollmentsApi.list().then(setEnrollments).catch(() => {});
     reloadPayments();
   }, []);
 

@@ -3,7 +3,7 @@
 // a given date belongs to when an enrollment mixes several classes with different schedules.
 const MAX_DAYS_SCANNED = 400;
 
-function getNextOccurrences(slots, afterDate, count) {
+export function getNextOccurrences(slots, afterDate, count) {
   const results = [];
   const cursor = new Date(afterDate);
   cursor.setHours(0, 0, 0, 0);
@@ -29,5 +29,3 @@ function getNextOccurrences(slots, afterDate, count) {
 
   return results;
 }
-
-module.exports = { getNextOccurrences };

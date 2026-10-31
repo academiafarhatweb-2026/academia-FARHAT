@@ -9,7 +9,7 @@ import Modal from '../../components/Modal';
 import Pagination from '../../components/Pagination';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 import { studentSchema } from '../../schemas';
 
 const emptyValues = { name: '', email: '', phone: '', active: true };

@@ -1,13 +1,11 @@
-const jwt = require('jsonwebtoken');
+import jwt from 'jsonwebtoken';
 
-function signToken(user) {
+export function signToken(user) {
   return jwt.sign({ sub: user._id.toString(), role: user.role }, process.env.JWT_SECRET, {
     expiresIn: '7d',
   });
 }
 
-function verifyToken(token) {
+export function verifyToken(token) {
   return jwt.verify(token, process.env.JWT_SECRET);
 }
-
-module.exports = { signToken, verifyToken };

@@ -1,5 +1,5 @@
 // Generic CRUD handlers shared by simple catalog resources (Instrument, Teacher, Plan, FixedClass).
-function createCrudController(Model, populate = []) {
+export default function createCrudController(Model, populate = []) {
   return {
     async list(req, res) {
       let query = Model.find();
@@ -37,5 +37,3 @@ function createCrudController(Model, populate = []) {
     },
   };
 }
-
-module.exports = createCrudController;

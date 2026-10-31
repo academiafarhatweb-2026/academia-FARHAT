@@ -15,9 +15,9 @@ export default function ScheduleOverview() {
   }
 
   useEffect(() => {
-    Promise.all([reload(), instrumentsApi.list().then(setInstruments), teachersApi.list().then(setTeachers)]).then(
-      () => setLoading(false)
-    );
+    Promise.all([reload(), instrumentsApi.list().then(setInstruments), teachersApi.list().then(setTeachers)])
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleChanged() {

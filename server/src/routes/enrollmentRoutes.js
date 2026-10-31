@@ -1,8 +1,11 @@
-const express = require('express');
-const { requireAuth, requireRole } = require('../middleware/auth');
-const asyncHandler = require('../utils/asyncHandler');
-const enrollmentController = require('../controllers/enrollmentController');
-const { createEnrollmentValidators, updateEnrollmentValidators } = require('../validators/enrollmentValidators');
+import express from 'express';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import * as enrollmentController from '../controllers/enrollmentController.js';
+import {
+  createEnrollmentValidators,
+  updateEnrollmentValidators,
+} from '../validators/enrollmentValidators.js';
 
 const router = express.Router();
 router.use(requireAuth);
@@ -17,4 +20,4 @@ router.put('/:id', updateEnrollmentValidators, asyncHandler(enrollmentController
 router.delete('/:id/permanent', asyncHandler(enrollmentController.hardRemove));
 router.delete('/:id', asyncHandler(enrollmentController.remove));
 
-module.exports = router;
+export default router;
