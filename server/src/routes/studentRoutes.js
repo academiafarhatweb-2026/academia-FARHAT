@@ -1,8 +1,8 @@
-const express = require('express');
-const { requireAuth, requireRole } = require('../middleware/auth');
-const asyncHandler = require('../utils/asyncHandler');
-const studentController = require('../controllers/studentController');
-const { studentValidators } = require('../validators/studentValidators');
+import express from 'express';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import asyncHandler from '../utils/asyncHandler.js';
+import * as studentController from '../controllers/studentController.js';
+import { studentValidators } from '../validators/studentValidators.js';
 
 const router = express.Router();
 router.use(requireAuth, requireRole('admin'));
@@ -14,4 +14,4 @@ router.put('/:id', studentValidators, asyncHandler(studentController.update));
 router.delete('/:id/permanent', asyncHandler(studentController.hardRemove));
 router.delete('/:id', asyncHandler(studentController.remove));
 
-module.exports = router;
+export default router;
