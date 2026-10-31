@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const homeContentSchema = new mongoose.Schema(
   {
@@ -12,4 +12,4 @@ const homeContentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('HomeContent', homeContentSchema);
+export default mongoose.model('HomeContent', homeContentSchema);
