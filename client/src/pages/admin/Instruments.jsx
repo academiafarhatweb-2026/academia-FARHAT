@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { instrumentsApi } from '../../api/catalog';
 import { useCrudModal } from '../../hooks/useCrudModal';
 import Modal from '../../components/Modal';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 import { instrumentSchema } from '../../schemas';
 
 const emptyValues = { name: '', order: '', isPublic: true };
