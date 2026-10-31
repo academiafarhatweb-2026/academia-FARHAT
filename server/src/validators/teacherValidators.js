@@ -1,8 +1,8 @@
-const { body } = require('express-validator');
-const validate = require('../middleware/validate');
-const { personName, email, phone, number } = require('./common');
+import { body } from 'express-validator';
+import validate from '../middleware/validate.js';
+import { personName, email, phone, number } from './common.js';
 
-const teacherValidators = [
+export const teacherValidators = [
   personName(body('name'), { label: 'El nombre' }),
   phone(body('phone'), { label: 'El teléfono', required: false }),
   email(body('email'), { label: 'El email', required: false }),
@@ -11,5 +11,3 @@ const teacherValidators = [
   number(body('rates.*.percentage'), { label: 'La comisión', min: 0, max: 100 }),
   validate,
 ];
-
-module.exports = { teacherValidators };
