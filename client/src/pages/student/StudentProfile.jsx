@@ -7,7 +7,7 @@ import { dayLabel } from '../../utils/days';
 import Logo from '../../components/Logo';
 import SoundRings from '../../components/SoundRings';
 import WhatsappButton from '../../components/WhatsappButton';
-import { useConfirm } from '../../context/ConfirmContext';
+import { useConfirm } from '../../hooks/useConfirm';
 
 const STATUS_INFO = {
   active: { label: 'Al día', className: 'border-emerald-400/30 bg-emerald-400/10 text-emerald-300' },
@@ -47,11 +47,15 @@ export default function StudentProfile() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    Promise.all([enrollmentsApi.listMine(), homeApi.get()]).then(([data, content]) => {
-      setEnrollments(data);
-      setWhatsappNumber(content?.whatsappNumber || '');
-      setLoading(false);
-    });
+    // The WhatsApp number is a nice-to-have: if /home fails the student should
+    // still see their classes, and either failure must never leave the spinner on.
+    Promise.all([enrollmentsApi.listMine(), homeApi.get().catch(() => null)])
+      .then(([data, content]) => {
+        setEnrollments(data);
+        setWhatsappNumber(content?.whatsappNumber || '');
+      })
+      .catch(() => setEnrollments([]))
+      .finally(() => setLoading(false));
   }, []);
 
   async function handleLogout() {

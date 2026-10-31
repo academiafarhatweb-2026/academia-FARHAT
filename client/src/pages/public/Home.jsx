@@ -123,8 +123,13 @@ export default function Home() {
       <section className="grain relative flex min-h-[90svh] items-center overflow-hidden">
         {heroImage && (
           <img
-            src={assetUrl(heroImage)}
+            src={assetUrl(heroImage, { width: 1600 })}
+            crossOrigin="anonymous"
+            srcSet={`${assetUrl(heroImage, { width: 800 })} 800w, ${assetUrl(heroImage, { width: 1600 })} 1600w, ${assetUrl(heroImage, { width: 2400 })} 2400w`}
+            sizes="100vw"
             alt=""
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
           />
         )}
@@ -182,15 +187,23 @@ export default function Home() {
             >
               {instrument.images?.[0] ? (
                 <>
+                  {/* Cloudinary pre-blurs a tiny copy: a CSS blur-xl over the full
+                      photo was very expensive to paint on phones. */}
                   <img
-                    src={assetUrl(instrument.images[0])}
+                    src={assetUrl(instrument.images[0], { blur: true })}
+                    crossOrigin="anonymous"
                     alt=""
                     aria-hidden="true"
-                    className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60 blur-xl"
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 h-full w-full scale-110 object-cover opacity-60"
                   />
                   <img
-                    src={assetUrl(instrument.images[0])}
+                    src={assetUrl(instrument.images[0], { width: 600 })}
+                    crossOrigin="anonymous"
                     alt={instrument.name}
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 h-full w-full object-contain saturate-[0.85] transition duration-500 group-hover:scale-105 group-hover:saturate-100"
                   />
                 </>
