@@ -1,6 +1,6 @@
 # Academia Farhat
 
-Sistema web para la gestión integral de la academia de música: landing page pública, portal de alumnos (sin contraseña) y panel de administración completo (alumnos, profesores, clases, inscripciones, pagos y liquidaciones).
+Sistema web para la gestión integral de la academia de música: landing page pública, portal de alumnos (sin contraseña) y panel de administración completo (alumnos, profesores, clases, inscripciones, pagos, liquidaciones y control de stock de productos).
 
 ## Stack
 
@@ -15,7 +15,9 @@ client/   # Frontend (React + Vite)
 server/   # Backend (Express + MongoDB)
 ```
 
-No es un monorepo con dependencias compartidas: `client` usa ESM y `server` usa CommonJS, cada uno con su propio `package.json`.
+No es un monorepo con dependencias compartidas: `client` y `server` tienen cada uno su propio `package.json` y ambos usan ES Modules (`import`/`export`).
+
+El frontend siempre llama a la API en su mismo dominio (`/api`): en desarrollo lo redirige Vite (`client/vite.config.js`) y en producción Vercel (`client/vercel.json`). Así la cookie de sesión es del mismo sitio y funciona también en celulares, que bloquean las cookies de terceros.
 
 ## Requisitos
 
@@ -65,7 +67,9 @@ npm install
 npm run dev
 ```
 
-La app queda disponible en `http://localhost:5173` y el backend en `http://localhost:4000`.
+La app queda disponible en `http://localhost:5173` y el backend en `http://localhost:4000`. El frontend no necesita variables de entorno.
+
+También se pueden levantar los dos juntos desde la raíz con `npm run dev`.
 
 ## Scripts disponibles
 
@@ -74,6 +78,7 @@ La app queda disponible en `http://localhost:5173` y el backend en `http://local
 - `npm start` — servidor en modo producción
 - `npm run seed` — crea el usuario administrador
 - `npm run seed:data` — carga datos reales iniciales (instrumentos, profesores, planes, horarios)
+- `npm run lint` — linter (oxlint)
 
 **client**
 - `npm run dev` — servidor de desarrollo
@@ -95,3 +100,4 @@ La app queda disponible en `http://localhost:5173` y el backend en `http://local
 - Vencimiento automático: una inscripción sin pago pasa a "de baja" sola, y vuelve a activarse al registrar un nuevo pago.
 - Liquidación de profesores por período, generada automáticamente a partir de los pagos reales, con posibilidad de ajustar montos a mano.
 - Calendario visual semanal de clases con gestión de alumnos por clase.
+- Control de stock de productos (instrumentos, accesorios, equipos): alertas de stock bajo, ajuste rápido +/-, orden de visualización y carrusel en la landing con detalle de cada producto.
