@@ -5,7 +5,7 @@ import { text, number } from './common.js';
 // Instruments.jsx (admin catalog form) sends name/order/isPublic on create.
 export const createInstrumentValidators = [
   text(body('name'), { label: 'El nombre', min: 2, max: 40 }),
-  body('isPublic').optional().isBoolean().withMessage('El campo "Mostrar en el Home" debe ser verdadero o falso.'),
+  body('isPublic').optional().isBoolean().withMessage('El campo "Mostrar en la página principal" debe ser verdadero o falso.'),
   number(body('order'), { label: 'El orden', required: false, min: 0, integer: true }),
   validate,
 ];
@@ -15,7 +15,7 @@ export const createInstrumentValidators = [
 // can be unconditionally required.
 export const updateInstrumentValidators = [
   text(body('name'), { label: 'El nombre', required: false, min: 2, max: 40 }),
-  body('isPublic').optional().isBoolean().withMessage('El campo "Mostrar en el Home" debe ser verdadero o falso.'),
+  body('isPublic').optional().isBoolean().withMessage('El campo "Mostrar en la página principal" debe ser verdadero o falso.'),
   number(body('order'), { label: 'El orden', required: false, min: 0, integer: true }),
   text(body('description'), { label: 'La descripción', required: false, max: 500 }),
   body('images').optional().isArray().withMessage('Las fotos deben ser una lista.'),
