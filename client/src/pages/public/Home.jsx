@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { homeApi } from '../../api/home';
 import WhatsappButton from '../../components/WhatsappButton';
@@ -7,6 +7,8 @@ import SoundRings from '../../components/SoundRings';
 import StringDivider from '../../components/StringDivider';
 import { assetUrl } from '../../utils/assetUrl';
 import PublicClassModal from '../../components/PublicClassModal';
+import ProductCarousel from '../../components/ProductCarousel';
+import ProductDetailModal from '../../components/ProductDetailModal';
 import { InstagramIcon, FacebookIcon, WhatsappIcon } from '../../components/socialIcons';
 
 const WHATSAPP_MESSAGE = 'Hola, quiero consultar sobre las clases de Academia Farhat';
@@ -82,6 +84,9 @@ const REASONS = [
 export default function Home() {
   const [content, setContent] = useState(null);
   const [selectedInstrument, setSelectedInstrument] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  // Stable identity: the detail modal re-runs its open/close effect when it changes.
+  const closeProduct = useCallback(() => setSelectedProduct(null), []);
 
   useEffect(() => {
     homeApi.get().then(setContent).catch(() => setContent(null));
@@ -89,6 +94,7 @@ export default function Home() {
 
   const heroImage = content?.heroImages?.[0];
   const instruments = content?.publicInstruments || [];
+  const products = content?.products || [];
 
   const scheduleByInstrument = (content?.schedule || []).reduce((groups, entry) => {
     const key = entry.instrumentName;
@@ -109,6 +115,11 @@ export default function Home() {
             <a href="#instrumentos" className="hidden text-sm text-ivory/70 transition hover:text-gold sm:inline">
               Instrumentos
             </a>
+            {products.length > 0 && (
+              <a href="#tienda" className="hidden text-sm text-ivory/70 transition hover:text-gold sm:inline">
+                Tienda
+              </a>
+            )}
             <a href="#contacto" className="hidden text-sm text-ivory/70 transition hover:text-gold sm:inline">
               Contacto
             </a>
@@ -231,6 +242,21 @@ export default function Home() {
       </section>
 
 
+      {/* Shop: only rendered once there's at least one active product */}
+      {products.length > 0 && (
+        <section id="tienda" className="border-t border-ivory/10 py-24">
+          <div className="container">
+            <div className="mx-auto mb-4 max-w-xl text-center">
+              <span className="text-xs font-semibold uppercase tracking-[0.3em] text-gold">Tienda</span>
+              <h2 className="mt-4 font-display text-4xl font-semibold text-ivory sm:text-5xl">Tu próximo instrumento</h2>
+              <p className="mt-4 text-ivory/60">Instrumentos, accesorios y equipos elegidos por músicos, listos para sonar.</p>
+            </div>
+            <StringDivider className="mx-auto mb-12 h-4 w-40 text-gold/50" />
+            <ProductCarousel products={products} onSelect={setSelectedProduct} />
+          </div>
+        </section>
+      )}
+
       {/* Why choose us */}
       <section className="border-t border-ivory/10 py-24">
         <div className="container">
@@ -335,6 +361,8 @@ export default function Home() {
       </footer>
 
       <WhatsappButton phone={content?.whatsappNumber} message={WHATSAPP_MESSAGE} floating />
+
+      <ProductDetailModal product={selectedProduct} whatsappNumber={content?.whatsappNumber} onClose={closeProduct} />
 
       <PublicClassModal
         instrument={selectedInstrument}
