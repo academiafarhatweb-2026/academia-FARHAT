@@ -11,6 +11,7 @@ import SearchableSelect from '../../components/SearchableSelect';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
 import { useConfirm } from '../../hooks/useConfirm';
+import { useActionError } from '../../hooks/useActionError';
 import { enrollmentSchema } from '../../schemas';
 
 const emptyValues = { student: '', plan: '', customValue: '', classes: [], enrollmentDate: new Date().toISOString().slice(0, 10) };
@@ -55,6 +56,7 @@ export default function Enrollments() {
   const [selectedClass, setSelectedClass] = useState('');
   const [search, setSearch] = useState('');
   const confirm = useConfirm();
+  const { error: actionError, run: runAction } = useActionError();
 
   const {
     register,
@@ -135,14 +137,17 @@ export default function Enrollments() {
       danger: true,
     });
     if (!ok) return;
-    await enrollmentsApi.hardRemove(selectedId);
-    setSelectedId(null);
-    reload();
+    await runAction(async () => {
+      await enrollmentsApi.hardRemove(selectedId);
+      setSelectedId(null);
+      reload();
+    });
   }
 
   return (
     <div>
       <h1>Inscripciones</h1>
+      {actionError && <div className="notice notice-danger mb-4">{actionError}</div>}
 
       <div className="flex-row mb-4">
         <button className="btn" onClick={openCreate}>Nueva inscripción</button>

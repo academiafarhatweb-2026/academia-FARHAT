@@ -12,6 +12,7 @@ const Login = lazy(() => import('./pages/auth/Login'));
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'));
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'));
 const Instruments = lazy(() => import('./pages/admin/Instruments'));
+const Products = lazy(() => import('./pages/admin/Products'));
 
 const ConfiguracionSection = lazy(() => import('./pages/admin/sections/ConfiguracionSection'));
 const AlumnosSection = lazy(() => import('./pages/admin/sections/AlumnosSection'));
@@ -42,6 +43,7 @@ export default function App() {
             <Route path="profesores" element={<ProfesoresSection />} />
             <Route path="clases" element={<ClasesSection />} />
             <Route path="instrumentos" element={<Instruments />} />
+            <Route path="stock" element={<Products />} />
           </Route>
 
           <Route

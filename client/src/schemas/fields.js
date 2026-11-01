@@ -1,10 +1,11 @@
 import { z } from 'zod';
-import { PERSON_NAME_PATTERN, PHONE_PATTERN, WHATSAPP_PATTERN, EMAIL_PATTERN } from '../utils/validation';
 
-const PERSON_NAME_RE = new RegExp(PERSON_NAME_PATTERN);
-const PHONE_RE = new RegExp(PHONE_PATTERN);
-const WHATSAPP_RE = new RegExp(WHATSAPP_PATTERN);
-const EMAIL_RE = new RegExp(EMAIL_PATTERN);
+// Same patterns as server/src/validators/common.js — keep both in sync.
+const PERSON_NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$/;
+const PHONE_RE = /^\+?[0-9 -]{6,20}$/;
+const WHATSAPP_RE = /^[0-9]{8,15}$/;
+// Backs up the loose native type="email" check with an explicit user@domain.tld shape.
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const URL_RE = /^https?:\/\/.+/i;
 
 // All form inputs arrive as strings (native HTML inputs) — these helpers
@@ -121,8 +122,4 @@ export function selectField({ label = 'Este campo' } = {}) {
 
 export function dateField({ label = 'La fecha' } = {}) {
   return z.string().min(1, `${label} es obligatoria.`);
-}
-
-export function toNumber(value) {
-  return Number(value);
 }

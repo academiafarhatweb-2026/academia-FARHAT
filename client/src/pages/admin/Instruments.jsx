@@ -99,7 +99,7 @@ export default function Instruments() {
             </div>
             <div className="field">
               <label>
-                <input type="checkbox" {...register('isPublic')} /> Mostrar en el Home
+                <input type="checkbox" {...register('isPublic')} /> Mostrar en la página principal
               </label>
             </div>
             {error && <p className="error mb-3">{error}</p>}

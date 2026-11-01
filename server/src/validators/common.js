@@ -1,10 +1,10 @@
 // Shared regex + field builders for express-validator chains — mirrors the
 // client-side rules in client/src/schemas so both sides agree on what's valid.
 
-export const PERSON_NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$/;
-export const PHONE_RE = /^\+?[0-9 -]{6,20}$/;
-export const WHATSAPP_RE = /^[0-9]{8,15}$/;
-export const URL_RE = /^https?:\/\/.+/i;
+const PERSON_NAME_RE = /^[A-Za-zÀ-ÖØ-öø-ÿ' .-]+$/;
+const PHONE_RE = /^\+?[0-9 -]{6,20}$/;
+const WHATSAPP_RE = /^[0-9]{8,15}$/;
+const URL_RE = /^https?:\/\/.+/i;
 
 export function personName(chain, { label = 'El nombre', required = true } = {}) {
   let c = chain.trim();

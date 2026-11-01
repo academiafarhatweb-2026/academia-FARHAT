@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+// Always same-origin: vercel.json (production) and vite.config.js (development)
+// proxy /api to the backend. Calling the backend's own domain directly would
+// make the session cookie third-party, and mobile browsers (Safari/iOS above
+// all) drop those — logins would "succeed" but never stick.
 const http = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
+  baseURL: '/api',
   withCredentials: true,
 });
 

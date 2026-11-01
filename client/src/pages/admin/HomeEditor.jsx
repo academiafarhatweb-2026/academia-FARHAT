@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { homeApi } from '../../api/home';
@@ -16,6 +16,11 @@ export default function HomeEditor() {
   const [savedInstrumentId, setSavedInstrumentId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [savingInstrumentId, setSavingInstrumentId] = useState(null);
+  // The form only appears once the saved content has loaded: saving the empty
+  // placeholder values would wipe the real Home (photos, address, links).
+  const [loadState, setLoadState] = useState('loading'); // loading | ready | error
+  const [saveError, setSaveError] = useState('');
+  const [instrumentError, setInstrumentError] = useState({ id: null, message: '' });
 
   const {
     register,
@@ -24,22 +29,31 @@ export default function HomeEditor() {
     formState: { errors },
   } = useForm({ resolver: zodResolver(homeContentSchema), defaultValues: emptyValues });
 
-  useEffect(() => {
-    reloadInstruments();
-    homeApi.get({ fresh: true }).then((content) => {
-      setHeroImages(content.heroImages || []);
-      reset({
-        address: content.address || '',
-        phone: content.phone || '',
-        whatsappNumber: content.whatsappNumber || '',
-        instagram: content.instagram || '',
-        facebook: content.facebook || '',
-      });
-    });
+  const loadContent = useCallback(() => {
+    setLoadState('loading');
+    homeApi
+      .get({ fresh: true })
+      .then((content) => {
+        setHeroImages(content.heroImages || []);
+        reset({
+          address: content.address || '',
+          phone: content.phone || '',
+          whatsappNumber: content.whatsappNumber || '',
+          instagram: content.instagram || '',
+          facebook: content.facebook || '',
+        });
+        setLoadState('ready');
+      })
+      .catch(() => setLoadState('error'));
   }, [reset]);
 
+  useEffect(() => {
+    reloadInstruments();
+    loadContent();
+  }, [loadContent]);
+
   function reloadInstruments() {
-    instrumentsApi.list().then((list) => {
+    instrumentsApi.list().catch(() => []).then((list) => {
       setInstruments(list);
       setDrafts((prev) => {
         const next = { ...prev };
@@ -58,9 +72,10 @@ export default function HomeEditor() {
   }
 
   async function onValid(data) {
-    if (saving) return;
+    if (saving || loadState !== 'ready') return;
     setSaving(true);
     setSaved(false);
+    setSaveError('');
     try {
       await homeApi.update({
         heroImages,
@@ -71,6 +86,8 @@ export default function HomeEditor() {
         facebook: data.facebook.trim(),
       });
       setSaved(true);
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'No se pudieron guardar los cambios. Intentá de nuevo.');
     } finally {
       setSaving(false);
     }
@@ -79,11 +96,14 @@ export default function HomeEditor() {
   async function handleSaveInstrument(instrumentId) {
     if (savingInstrumentId) return;
     setSavedInstrumentId(null);
+    setInstrumentError({ id: null, message: '' });
     setSavingInstrumentId(instrumentId);
     try {
       await instrumentsApi.update(instrumentId, drafts[instrumentId]);
       setSavedInstrumentId(instrumentId);
       reloadInstruments();
+    } catch (err) {
+      setInstrumentError({ id: instrumentId, message: err.response?.data?.message || 'No se pudo guardar.' });
     } finally {
       setSavingInstrumentId(null);
     }
@@ -93,7 +113,17 @@ export default function HomeEditor() {
     <div>
       <h1>Editar página principal</h1>
 
-      <form className="card-form" onSubmit={handleSubmit(onValid)} noValidate>
+      {loadState === 'loading' && <p className="mb-6">Cargando...</p>}
+      {loadState === 'error' && (
+        <div className="notice notice-danger mb-6">
+          No se pudo cargar el contenido de la página principal.{' '}
+          <button type="button" className="btn secondary ml-2 !py-1" onClick={loadContent}>
+            Reintentar
+          </button>
+        </div>
+      )}
+
+      <form className={`card-form ${loadState === 'ready' ? '' : 'hidden'}`} onSubmit={handleSubmit(onValid)} noValidate>
         <ImageUploader label="Imágenes principales (portada)" value={heroImages} onChange={setHeroImages} />
 
         <div className="field">
@@ -122,13 +152,14 @@ export default function HomeEditor() {
           {errors.facebook && <p className="error">{errors.facebook.message}</p>}
         </div>
 
+        {saveError && <p className="notice notice-danger mb-3">{saveError}</p>}
         <button className="btn" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
         {saved && <span style={{ marginLeft: 8 }}>Guardado.</span>}
       </form>
 
-      <h2>Instrumentos en el Home</h2>
+      <h2>Instrumentos en la página principal</h2>
       <p className="mb-4 text-sm text-ink/60">
-        Por cada instrumento: si se muestra en el Home, su descripción y sus fotos propias.
+        Por cada instrumento: si se muestra en la página principal, su descripción y sus fotos propias.
       </p>
 
       <div className="grid">
@@ -173,6 +204,9 @@ export default function HomeEditor() {
                 {savingInstrumentId === instrument._id ? 'Guardando...' : `Guardar ${instrument.name}`}
               </button>
               {savedInstrumentId === instrument._id && <span className="ml-2">Guardado.</span>}
+              {instrumentError.id === instrument._id && (
+                <p className="mt-2 text-sm font-medium text-wine">{instrumentError.message}</p>
+              )}
             </div>
           );
         })}
