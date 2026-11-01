@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import helmet from 'helmet';
-import multer from 'multer';
+import HttpError from './utils/httpError.js';
 import sanitizeInput from './middleware/sanitize.js';
 
 import authRoutes from './routes/authRoutes.js';
@@ -18,6 +18,7 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import settlementRoutes from './routes/settlementRoutes.js';
 import homeRoutes from './routes/homeRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import productRoutes from './routes/productRoutes.js';
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/settlements', settlementRoutes);
 app.use('/api/home', homeRoutes);
 app.use('/api/uploads', uploadRoutes);
+app.use('/api/products', productRoutes);
 
 app.use('/api', (req, res) => res.status(404).json({ message: 'No encontrado' }));
 
@@ -49,13 +51,7 @@ app.use((err, req, res, _next) => {
   if (err.name === 'CastError') return res.status(400).json({ message: 'Identificador o dato inválido' });
   if (err.name === 'ValidationError') return res.status(400).json({ message: 'Hay datos inválidos en el formulario' });
   if (err.code === 11000) return res.status(409).json({ message: 'Ya existe un registro con esos datos' });
-  if (err instanceof multer.MulterError) {
-    const message = err.code === 'LIMIT_FILE_SIZE' ? 'Cada imagen puede pesar como máximo 8 MB' : 'No se pudo subir el archivo';
-    return res.status(400).json({ message });
-  }
-  if (err.message === 'Only image files are allowed') {
-    return res.status(400).json({ message: 'Solo se permiten imágenes JPG, PNG, WEBP o GIF' });
-  }
+  if (err instanceof HttpError) return res.status(err.status).json({ message: err.message });
   if (err.type === 'entity.parse.failed' || err.type === 'entity.too.large') {
     return res.status(400).json({ message: 'Solicitud inválida' });
   }
