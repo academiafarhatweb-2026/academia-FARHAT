@@ -6,7 +6,7 @@ export default function ConfiguracionSection() {
   return (
     <Tabs
       tabs={[
-        { label: 'Home', content: <HomeEditor /> },
+        { label: 'Página principal', content: <HomeEditor /> },
         { label: 'Planes', content: <Plans /> },
       ]}
     />

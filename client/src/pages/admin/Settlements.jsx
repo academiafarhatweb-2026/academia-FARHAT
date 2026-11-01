@@ -5,6 +5,7 @@ import { teachersApi } from '../../api/catalog';
 import { settlementsApi } from '../../api/settlements';
 import Modal from '../../components/Modal';
 import { useConfirm } from '../../hooks/useConfirm';
+import { useActionError } from '../../hooks/useActionError';
 import { settlementGenerateSchema, settlementLineEditSchema, settlementIdentityEditSchema } from '../../schemas';
 
 const now = new Date();
@@ -35,6 +36,7 @@ export default function Settlements() {
   const [editingSettlement, setEditingSettlement] = useState(null);
   const [savingSettlement, setSavingSettlement] = useState(false);
   const confirm = useConfirm();
+  const { error: actionError, run: runAction } = useActionError();
 
   const {
     register: registerGenerate,
@@ -127,9 +129,11 @@ export default function Settlements() {
       danger: true,
     });
     if (!ok) return;
-    await settlementsApi.remove(s._id);
-    if (settlement?._id === s._id) setSettlement(null);
-    reloadSettlements();
+    await runAction(async () => {
+      await settlementsApi.remove(s._id);
+      if (settlement?._id === s._id) setSettlement(null);
+      reloadSettlements();
+    });
   }
 
   async function onValidGenerate(data) {
@@ -206,6 +210,7 @@ export default function Settlements() {
   return (
     <div>
       <h1>Liquidación de profesores</h1>
+      {actionError && <div className="notice notice-danger mb-4">{actionError}</div>}
 
       <form className="card-form no-print" onSubmit={handleSubmitGenerate(onValidGenerate)} noValidate>
         <div className="field">
