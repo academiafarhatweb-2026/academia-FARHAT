@@ -10,12 +10,22 @@ const links = [
   { to: '/admin/profesores', label: 'Profesores' },
   { to: '/admin/clases', label: 'Clases' },
   { to: '/admin/instrumentos', label: 'Instrumentos' },
+  { to: '/admin/stock', label: 'Stock' },
 ];
 
 function MenuIcon({ className }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
       <path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ExternalIcon({ className }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M14 4h6v6M20 4l-9 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
     </svg>
   );
 }
@@ -63,9 +73,23 @@ export default function AdminLayout() {
             </NavLink>
           ))}
         </nav>
-        <button className="btn secondary mt-auto" onClick={handleLogout}>
-          Salir
-        </button>
+        <div className="mt-auto flex flex-col gap-2">
+          {/* New tab: the admin keeps its place in the panel (and its session) */}
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn secondary no-underline"
+            aria-label="Ver sitio (se abre en otra pestaña)"
+            onClick={closeSidebar}
+          >
+            Ver sitio
+            <ExternalIcon className="h-4 w-4" />
+          </a>
+          <button className="btn secondary" onClick={handleLogout}>
+            Salir
+          </button>
+        </div>
       </aside>
 
       <main className="admin-content">

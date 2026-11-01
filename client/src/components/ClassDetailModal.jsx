@@ -6,6 +6,7 @@ import ExpirationBadge from './ExpirationBadge';
 import { classesApi, studentsApi, plansApi } from '../api/catalog';
 import { enrollmentsApi } from '../api/enrollments';
 import { useConfirm } from '../hooks/useConfirm';
+import { useActionError } from '../hooks/useActionError';
 
 export default function ClassDetailModal({ classItem, instruments, teachers, onClose, onChanged }) {
   const [enrollments, setEnrollments] = useState([]);
@@ -16,6 +17,7 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
   const [error, setError] = useState('');
   const [addingStudent, setAddingStudent] = useState(false);
   const confirm = useConfirm();
+  const { error: actionError, run: runAction } = useActionError();
 
   useEffect(() => {
     enrollmentsApi.list().then(setEnrollments);
@@ -43,7 +45,8 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
       danger: true,
     });
     if (!ok) return;
-    await classesApi.remove(classItem._id);
+    const removed = await runAction(() => classesApi.remove(classItem._id));
+    if (!removed) return;
     onChanged();
     onClose();
   }
@@ -57,14 +60,13 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
     });
     if (!ok) return;
     const remainingClasses = enrollment.classes.filter((c) => c._id !== classItem._id).map((c) => c._id);
-    if (remainingClasses.length === 0) {
-      await enrollmentsApi.update(enrollment._id, { active: false });
-    } else {
-      await enrollmentsApi.update(enrollment._id, { classes: remainingClasses });
-    }
-    const refreshed = await enrollmentsApi.list();
-    setEnrollments(refreshed);
-    onChanged();
+    await runAction(async () => {
+      // The last class leaving means the whole enrollment ends.
+      const change = remainingClasses.length === 0 ? { active: false } : { classes: remainingClasses };
+      await enrollmentsApi.update(enrollment._id, change);
+      setEnrollments(await enrollmentsApi.list());
+      onChanged();
+    });
   }
 
   async function handleAddStudent(e) {
@@ -93,6 +95,7 @@ export default function ClassDetailModal({ classItem, instruments, teachers, onC
 
   return (
     <Modal title={`${classItem.instrument?.name || 'Instrumento eliminado'} - ${classItem.teacher?.name || 'Profesor eliminado'}`} onClose={onClose}>
+      {actionError && <div className="notice notice-danger mb-4">{actionError}</div>}
       <Tabs
         tabs={[
           {

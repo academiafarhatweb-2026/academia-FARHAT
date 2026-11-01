@@ -19,6 +19,7 @@ function toFormValue(fixedClass) {
 
 export default function ClassForm({ instruments, teachers, initial, onSubmit, submitLabel = 'Guardar' }) {
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   // Callers (Classes.jsx via useCrudModal, ClassDetailModal directly) don't all
   // provide their own re-entrancy guard, so this form locks itself against a
   // double-click/double-submit firing onSubmit twice.
@@ -45,12 +46,15 @@ export default function ClassForm({ instruments, teachers, initial, onSubmit, su
     if (submittingRef.current) return;
     submittingRef.current = true;
     setSubmitting(true);
+    setSubmitError('');
     try {
       await onSubmit({
         instrument: data.instrument,
         teacher: data.teacher,
         slots: data.slots.map((s) => ({ day: Number(s.day), startHour: Number(s.startHour), endHour: Number(s.endHour) })),
       });
+    } catch (err) {
+      setSubmitError(err.response?.data?.message || 'No se pudo guardar la clase.');
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -97,6 +101,7 @@ export default function ClassForm({ instruments, teachers, initial, onSubmit, su
         <button type="button" className="btn secondary" onClick={addSlot}>+ Agregar horario</button>
       </div>
 
+      {submitError && <p className="notice notice-danger mb-3">{submitError}</p>}
       <button className="btn" type="submit" disabled={submitting}>{submitting ? 'Guardando...' : submitLabel}</button>
     </form>
   );

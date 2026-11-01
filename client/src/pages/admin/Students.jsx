@@ -10,6 +10,7 @@ import Pagination from '../../components/Pagination';
 import ExpirationBadge from '../../components/ExpirationBadge';
 import { dayLabel } from '../../utils/days';
 import { useConfirm } from '../../hooks/useConfirm';
+import { useActionError } from '../../hooks/useActionError';
 import { studentSchema } from '../../schemas';
 
 const emptyValues = { name: '', email: '', phone: '', active: true };
@@ -30,6 +31,7 @@ export default function Students() {
   const { items, loading, selectedId, setSelectedId, selected, mode, error, submitting, openCreate, openEdit, close, submit, update, reload } =
     useCrudModal(studentsApi);
   const confirm = useConfirm();
+  const { error: actionError, run: runAction } = useActionError();
   const [search, setSearch] = useState('');
 
   const {
@@ -60,12 +62,14 @@ export default function Students() {
 
   async function toggleActive() {
     if (!selected) return;
-    await update(selectedId, { active: !selected.active });
+    await runAction(() => update(selectedId, { active: !selected.active }));
   }
 
   async function setEnrollmentPaid(enrollment, paid) {
-    await enrollmentsApi.update(enrollment._id, { paid });
-    reload();
+    await runAction(async () => {
+      await enrollmentsApi.update(enrollment._id, { paid });
+      reload();
+    });
   }
 
   async function handleHardDelete() {
@@ -77,14 +81,17 @@ export default function Students() {
       danger: true,
     });
     if (!ok) return;
-    await studentsApi.hardRemove(selectedId);
-    setSelectedId(null);
-    reload();
+    await runAction(async () => {
+      await studentsApi.hardRemove(selectedId);
+      setSelectedId(null);
+      reload();
+    });
   }
 
   return (
     <div>
       <h1>Alumnos</h1>
+      {actionError && <div className="notice notice-danger mb-4">{actionError}</div>}
       <p className="mb-4 text-sm text-ink/60">
         El alumno ingresa solo con su email, sin contraseña. Alcanza con cargarlo acá.
       </p>

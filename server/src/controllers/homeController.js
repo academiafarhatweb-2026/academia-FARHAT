@@ -1,6 +1,7 @@
 import HomeContent from '../models/HomeContent.js';
 import Instrument from '../models/Instrument.js';
 import FixedClass from '../models/FixedClass.js';
+import { listPublicProducts } from './productController.js';
 
 async function buildPublicPayload(content) {
   const publicInstruments = await Instrument.find({ isPublic: true })
@@ -24,7 +25,9 @@ async function buildPublicPayload(content) {
       slots: c.slots,
     }));
 
-  return { ...content.toObject(), publicInstruments, schedule };
+  const products = await listPublicProducts();
+
+  return { ...content.toObject(), publicInstruments, schedule, products };
 }
 
 export async function getContent(req, res) {
@@ -32,7 +35,10 @@ export async function getContent(req, res) {
   if (!content) content = await HomeContent.create({});
   // Cached at Vercel's edge for a minute (and served stale while refreshing),
   // so most visits never wait for a cold serverless start + MongoDB connection.
-  res.set('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=600');
+  // Browsers must not keep their own stale copy: they always revalidate, or an
+  // admin's changes wouldn't show up in their own browser for minutes.
+  res.set('Cache-Control', 'no-cache');
+  res.set('Vercel-CDN-Cache-Control', 'max-age=60, stale-while-revalidate=600');
   res.json(await buildPublicPayload(content));
 }
 

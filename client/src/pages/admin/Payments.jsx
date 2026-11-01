@@ -5,6 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { enrollmentsApi } from '../../api/enrollments';
 import { paymentsApi } from '../../api/payments';
 import { useConfirm } from '../../hooks/useConfirm';
+import { useActionError } from '../../hooks/useActionError';
 import { usePagination } from '../../hooks/usePagination';
 import Modal from '../../components/Modal';
 import Pagination from '../../components/Pagination';
@@ -24,6 +25,7 @@ export default function Payments() {
   const [loadingReceiptId, setLoadingReceiptId] = useState(null);
   const [search, setSearch] = useState('');
   const confirm = useConfirm();
+  const { error: actionError, run: runAction } = useActionError();
 
   const {
     register,
@@ -105,8 +107,10 @@ export default function Payments() {
       danger: true,
     });
     if (!ok) return;
-    await paymentsApi.remove(p._id);
-    reloadPayments();
+    await runAction(async () => {
+      await paymentsApi.remove(p._id);
+      reloadPayments();
+    });
   }
 
   async function handleViewReceipt(p) {
@@ -131,6 +135,7 @@ export default function Payments() {
   return (
     <div>
       <h1 className="no-print">Registrar pago</h1>
+      {actionError && <div className="notice notice-danger mb-4">{actionError}</div>}
 
       <form className="card-form no-print" onSubmit={handleSubmit(onValid)} noValidate>
         <div className="field">
