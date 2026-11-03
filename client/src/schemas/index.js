@@ -11,6 +11,7 @@ import {
   textField,
 } from './fields';
 import { PAYMENT_METHODS, PRODUCT_IMAGE_MAX_BYTES, PRODUCT_IMAGE_TYPES } from '../utils/products';
+import { todayISO } from '../utils/dates';
 
 export const studentSchema = z.object({
   name: personNameField({ label: 'El nombre' }),
@@ -157,3 +158,23 @@ export const productSchema = z
       ctx.addIssue({ code: 'custom', path: ['imageFile'], message: 'La foto puede pesar como máximo 2 MB.' });
     }
   });
+
+// Built per product: the quantity can't exceed what's in stock right now.
+export function saleSchema(maxQuantity) {
+  const stockMessage = maxQuantity === 1 ? 'Solo queda 1 unidad en stock.' : `Solo hay ${maxQuantity} unidades en stock.`;
+  return z.object({
+    quantity: numberField({ min: 1, integer: true, label: 'La cantidad' }).refine(
+      (v) => v.trim() === '' || Number(v) <= maxQuantity,
+      { message: stockMessage }
+    ),
+    unitPrice: numberField({ label: 'El precio por unidad' }).refine((v) => v.trim() === '' || Number(v) > 0, {
+      message: 'El precio por unidad debe ser mayor a 0.',
+    }),
+    // "YYYY-MM-DD" strings compare correctly as text
+    soldAt: dateField({ label: 'La fecha de venta' }).refine((v) => v <= todayISO(), {
+      message: 'La fecha de venta no puede ser futura.',
+    }),
+    paymentMethod: z.string(),
+    note: textField({ required: false, max: 200, label: 'La nota' }),
+  });
+}
