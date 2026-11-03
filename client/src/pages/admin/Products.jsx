@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { productsApi } from '../../api/products';
 import Modal from '../../components/Modal';
 import ProductForm from '../../components/ProductForm';
+import SaleForm from '../../components/SaleForm';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useActionError } from '../../hooks/useActionError';
 import { assetUrl } from '../../utils/assetUrl';
@@ -70,6 +71,8 @@ export default function Products() {
   const [loadError, setLoadError] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [editing, setEditing] = useState(null); // null | { product?: Product }
+  const [selling, setSelling] = useState(null); // the product being sold, if any
+  const [lastSale, setLastSale] = useState(null);
   const [pendingStock, setPendingStock] = useState(() => new Set());
   const [dragOverId, setDragOverId] = useState(null);
   const [reordering, setReordering] = useState(false);
@@ -135,6 +138,14 @@ export default function Products() {
     }
     setEditing(null);
     await load();
+  }
+
+  // The server already took the units out of stock: show the new numbers
+  // (and any stock alert they trigger) without reloading the whole list.
+  function handleSold(sale, updated) {
+    setProducts((list) => list.map((p) => (p._id === updated._id ? updated : p)));
+    setLastSale(sale);
+    setSelling(null);
   }
 
   async function handleDelete(product) {
@@ -276,6 +287,12 @@ export default function Products() {
       )}
 
       {actionError && <div className="notice notice-danger mb-4">{actionError}</div>}
+      {lastSale && (
+        <div className="notice notice-ok mb-4" role="status">
+          Venta registrada: {lastSale.quantity} × {lastSale.productName} por {formatPrice(lastSale.total)}. La podés ver en
+          la pestaña Ventas.
+        </div>
+      )}
 
       {loading && <p>Cargando...</p>}
 
@@ -300,7 +317,7 @@ export default function Products() {
 
       {!loading && !loadError && products.length > 0 && (
         <div className="table-wrap">
-          <table className="!min-w-[880px]">
+          <table className="!min-w-[980px]">
             <thead>
               <tr>
                 <th aria-label="Mover" />
@@ -310,6 +327,7 @@ export default function Products() {
                 <th>Precio</th>
                 <th>Stock</th>
                 <th>Estado</th>
+                <th>Venta</th>
                 <th aria-label="Acciones" />
               </tr>
             </thead>
@@ -435,6 +453,17 @@ export default function Products() {
                       <StatusBadges product={product} />
                     </td>
                     <td>
+                      <button
+                        type="button"
+                        className="btn !px-3 !py-1.5"
+                        onClick={() => setSelling(product)}
+                        disabled={product.stock === 0}
+                        title={product.stock === 0 ? 'Sin stock para vender' : undefined}
+                      >
+                        Vender
+                      </button>
+                    </td>
+                    <td>
                       <div className="flex justify-end gap-1.5">
                         <button type="button" className="btn secondary !px-3 !py-1.5" onClick={() => setEditing({ product })}>
                           Editar
@@ -449,7 +478,7 @@ export default function Products() {
               })}
               {visibleProducts.length === 0 && (
                 <tr>
-                  <td colSpan="8" className="!font-sans text-center text-ink/50">
+                  <td colSpan="9" className="!font-sans text-center text-ink/50">
                     Ningún producto coincide con los filtros.
                   </td>
                 </tr>
@@ -462,6 +491,12 @@ export default function Products() {
       {editing && (
         <Modal title={editing.product ? 'Modificar producto' : 'Nuevo producto'} onClose={() => setEditing(null)}>
           <ProductForm product={editing.product} nextOrder={nextOrder} onSave={handleSave} />
+        </Modal>
+      )}
+
+      {selling && (
+        <Modal title="Registrar venta" onClose={() => setSelling(null)}>
+          <SaleForm product={selling} onSaved={handleSold} />
         </Modal>
       )}
     </div>
