@@ -141,6 +141,11 @@
     font-family: var(--font-mono);
   }
 
+  tfoot td {
+    @apply border-t border-ink/10 bg-gold/[0.06] px-4 py-2.5 text-sm text-ink;
+    font-family: var(--font-mono);
+  }
+
   tbody tr:hover {
     @apply bg-gold/10;
   }
