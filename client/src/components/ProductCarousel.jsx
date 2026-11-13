@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { assetUrl } from '../utils/assetUrl';
+import ProductPhoto from './ProductPhoto';
 import { formatPrice } from '../utils/products';
 
 function ArrowIcon({ direction, className }) {
@@ -24,20 +24,17 @@ function ProductCard({ product, onSelect }) {
       onClick={() => onSelect(product)}
       className="group flex h-full w-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-ivory/10 bg-walnut text-left transition duration-300 hover:-translate-y-1 hover:border-gold/50 hover:shadow-xl hover:shadow-stage/50 focus-visible:border-gold"
     >
-      {/* The whole photo is always visible: contained (never cropped or zoomed),
-          on white so product shots with a white background blend in, and with
-          nothing laid over it — the badges live below. overflow-hidden only
-          stops tall photos from stretching the square (they still fit whole). */}
-      <div className="aspect-square w-full overflow-hidden bg-white">
-        <img
-          src={assetUrl(product.image, { width: 500 })}
-          crossOrigin="anonymous"
-          alt={product.name}
-          loading="lazy"
-          decoding="async"
-          className={`h-full w-full object-contain p-3 ${product.inStock ? '' : 'opacity-50 grayscale'}`}
-        />
-      </div>
+      {/* Fills the square, or shows white-background shots whole (see
+          ProductPhoto). Nothing is laid over the photo: the badges live below. */}
+      <ProductPhoto
+        url={product.image}
+        width={500}
+        alt={product.name}
+        loading="lazy"
+        decoding="async"
+        className="aspect-square w-full overflow-hidden"
+        imgClassName={product.inStock ? '' : 'opacity-50 grayscale'}
+      />
 
       <div className="flex flex-1 flex-col p-4">
         {/* Always rendered (even empty) so titles line up across cards */}

@@ -21,6 +21,9 @@ export const PAYMENT_METHODS = Object.keys(PAYMENT_METHOD_LABELS);
 export const PRODUCT_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const PRODUCT_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 
+// Photos per product (same limit as the server); the first one is the main photo.
+export const MAX_PRODUCT_IMAGES = 8;
+
 const priceFormat = new Intl.NumberFormat('es-AR', {
   style: 'currency',
   currency: 'ARS',

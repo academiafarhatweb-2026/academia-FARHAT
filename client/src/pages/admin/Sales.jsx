@@ -4,6 +4,8 @@ import Modal from '../../components/Modal';
 import SaleForm from '../../components/SaleForm';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useActionError } from '../../hooks/useActionError';
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/Pagination';
 import { formatDate, monthRange, todayISO } from '../../utils/dates';
 import { PAYMENT_METHOD_LABELS, formatPrice, productTitle } from '../../utils/products';
 
@@ -77,6 +79,20 @@ export default function Sales() {
     [visibleSales]
   );
 
+  // The summary and the footer add up the whole period; the table shows 10 at a time.
+  const { page, setPage, totalPages, pageItems } = usePagination(visibleSales, 10);
+
+  // New dates or a new search show their results from the first page.
+  function changeRange(update) {
+    setRange(update);
+    setPage(1);
+  }
+
+  function changeQuery(value) {
+    setQuery(value);
+    setPage(1);
+  }
+
   // The edit may move it out of the selected dates or change the totals:
   // reload rather than patch the list in place.
   function handleSaved(updated) {
@@ -110,20 +126,20 @@ export default function Sales() {
         <div className="grid !gap-3 sm:!grid-cols-3 lg:!grid-cols-3">
           <div className="field !mb-0">
             <label htmlFor="sales-from">Desde</label>
-            <input id="sales-from" type="date" value={range.from} max={range.to || undefined} onChange={(e) => setRange((r) => ({ ...r, from: e.target.value }))} />
+            <input id="sales-from" type="date" value={range.from} max={range.to || undefined} onChange={(e) => changeRange((r) => ({ ...r, from: e.target.value }))} />
           </div>
           <div className="field !mb-0">
             <label htmlFor="sales-to">Hasta</label>
-            <input id="sales-to" type="date" value={range.to} min={range.from || undefined} onChange={(e) => setRange((r) => ({ ...r, to: e.target.value }))} />
+            <input id="sales-to" type="date" value={range.to} min={range.from || undefined} onChange={(e) => changeRange((r) => ({ ...r, to: e.target.value }))} />
           </div>
           <div className="field !mb-0">
             <label htmlFor="sales-query">Buscar</label>
-            <input id="sales-query" type="search" placeholder="Producto, marca o nota" value={query} onChange={(e) => setQuery(e.target.value)} />
+            <input id="sales-query" type="search" placeholder="Producto, marca o nota" value={query} onChange={(e) => changeQuery(e.target.value)} />
           </div>
         </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {QUICK_RANGES.map(({ label, range: getRange }) => (
-            <button key={label} type="button" className="btn secondary !px-3 !py-1 !text-xs" onClick={() => setRange(getRange())}>
+            <button key={label} type="button" className="btn secondary !px-3 !py-1 !text-xs" onClick={() => changeRange(getRange())}>
               {label}
             </button>
           ))}
@@ -180,7 +196,7 @@ export default function Sales() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleSales.map((sale) => (
+                  {pageItems.map((sale) => (
                     <tr key={sale._id}>
                       <td>{formatDate(sale.soldAt)}</td>
                       <td className="!font-sans">
@@ -223,6 +239,7 @@ export default function Sales() {
               </table>
             </div>
           )}
+          <Pagination page={page} totalPages={totalPages} onChange={setPage} />
         </>
       )}
 

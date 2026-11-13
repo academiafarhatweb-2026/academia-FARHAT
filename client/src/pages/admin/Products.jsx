@@ -5,6 +5,8 @@ import ProductForm from '../../components/ProductForm';
 import SaleForm from '../../components/SaleForm';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useActionError } from '../../hooks/useActionError';
+import { usePagination } from '../../hooks/usePagination';
+import Pagination from '../../components/Pagination';
 import { assetUrl } from '../../utils/assetUrl';
 import { CONDITION_LABELS, formatPrice, stockStatus } from '../../utils/products';
 
@@ -16,6 +18,7 @@ const STOCK_FILTERS = [
 ];
 
 const EMPTY_FILTERS = { query: '', category: '', brand: '', stock: '' };
+const PAGE_SIZE = 10;
 
 function errorMessage(err, fallback) {
   return err.response?.data?.message || fallback;
@@ -124,10 +127,20 @@ export default function Products() {
     });
   }, [products, filters]);
 
+  const { page, setPage, totalPages, pageItems } = usePagination(visibleProducts, PAGE_SIZE);
+  const firstIndex = (page - 1) * PAGE_SIZE;
+
   const nextOrder = products.reduce((max, p) => Math.max(max, p.order), 0) + 1;
 
+  // A new filter shows its results from the first page.
   function setFilter(name, value) {
     setFilters((f) => ({ ...f, [name]: value }));
+    setPage(1);
+  }
+
+  function clearFilters() {
+    setFilters(EMPTY_FILTERS);
+    setPage(1);
   }
 
   async function handleSave(payload) {
@@ -209,7 +222,10 @@ export default function Products() {
   function moveBy(product, step) {
     const index = products.findIndex((p) => p._id === product._id);
     const target = products[index + step];
-    if (target) moveProduct(product._id, target._id);
+    if (!target) return;
+    moveProduct(product._id, target._id);
+    // Follow the product when the arrow takes it to the previous/next page.
+    setPage(Math.floor((index + step) / PAGE_SIZE) + 1);
   }
 
   const canReorder = !filtersActive && products.length > 1;
@@ -275,7 +291,7 @@ export default function Products() {
             {filtersActive ? (
               <>
                 Mostrando {visibleProducts.length} de {products.length}. Para reordenar, quitá los filtros.{' '}
-                <button type="button" className="cursor-pointer font-semibold text-wine underline" onClick={() => setFilters(EMPTY_FILTERS)}>
+                <button type="button" className="cursor-pointer font-semibold text-wine underline" onClick={clearFilters}>
                   Limpiar filtros
                 </button>
               </>
@@ -317,7 +333,10 @@ export default function Products() {
 
       {!loading && !loadError && products.length > 0 && (
         <div className="table-wrap">
-          <table className="!min-w-[980px]">
+          {/* Tighter cells than other tables: with 9 columns it still has to
+              fit a 1280px laptop without hiding the action buttons. */}
+          <table className="!min-w-[920px] [&_td]:!px-2.5 [&_th]:!px-2.5">
+
             <thead>
               <tr>
                 <th aria-label="Mover" />
@@ -332,7 +351,8 @@ export default function Products() {
               </tr>
             </thead>
             <tbody>
-              {visibleProducts.map((product, index) => {
+              {pageItems.map((product, pageIndex) => {
+                const index = firstIndex + pageIndex; // position in the whole list, for the ▲▼ limits
                 const status = stockStatus(product);
                 const busy = pendingStock.has(product._id);
                 return (
@@ -402,7 +422,7 @@ export default function Products() {
                           crossOrigin="anonymous"
                           alt=""
                           loading="lazy"
-                          className="h-12 w-12 shrink-0 rounded-lg border border-ink/10 bg-white object-contain"
+                          className="h-12 w-12 shrink-0 rounded-lg border border-ink/10 bg-white object-cover"
                         />
                         <div className="min-w-0">
                           <p className="font-semibold">{product.name}</p>
@@ -464,7 +484,8 @@ export default function Products() {
                       </button>
                     </td>
                     <td>
-                      <div className="flex justify-end gap-1.5">
+                      {/* Stacked, so the table (with its "Venta" column) fits the screen */}
+                      <div className="flex flex-col items-stretch gap-1.5">
                         <button type="button" className="btn secondary !px-3 !py-1.5" onClick={() => setEditing({ product })}>
                           Editar
                         </button>
@@ -487,6 +508,7 @@ export default function Products() {
           </table>
         </div>
       )}
+      {!loading && !loadError && <Pagination page={page} totalPages={totalPages} onChange={setPage} />}
 
       {editing && (
         <Modal title={editing.product ? 'Modificar producto' : 'Nuevo producto'} onClose={() => setEditing(null)}>

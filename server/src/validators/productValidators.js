@@ -1,20 +1,26 @@
 import { body } from 'express-validator';
 import validate from '../middleware/validate.js';
 import { text, number } from './common.js';
-import { PAYMENT_METHODS, PRODUCT_CONDITIONS } from '../constants/products.js';
+import { MAX_PRODUCT_IMAGES, PAYMENT_METHODS, PRODUCT_CONDITIONS } from '../constants/products.js';
 
 // Same rules as productSchema in client/src/schemas — the server never trusts
 // that the form already checked them.
 
 const CLOUDINARY_IMAGE_RE = /^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\/.+/;
 
-function image({ required }) {
-  let chain = body('image').trim();
-  chain = required ? chain.notEmpty().withMessage('La foto es obligatoria.') : chain.optional({ checkFalsy: true });
-  return chain.matches(CLOUDINARY_IMAGE_RE).withMessage('La foto debe subirse desde el formulario.');
-}
-
 const productFields = [
+  // In display order: the first one is the main photo.
+  body('images')
+    .isArray({ min: 1, max: MAX_PRODUCT_IMAGES })
+    .withMessage(`Cargá entre 1 y ${MAX_PRODUCT_IMAGES} fotos.`)
+    .bail()
+    .custom((images) => new Set(images).size === images.length)
+    .withMessage('Hay fotos repetidas.'),
+  body('images.*')
+    .isString()
+    .bail()
+    .matches(CLOUDINARY_IMAGE_RE)
+    .withMessage('Las fotos deben subirse desde el formulario.'),
   text(body('name'), { label: 'El nombre', min: 2, max: 100 }),
   text(body('brand'), { label: 'La marca', required: false, max: 60 }),
   text(body('model'), { label: 'El modelo', required: false, max: 60 }),
@@ -56,10 +62,9 @@ const productFields = [
   body('active').optional().isBoolean().withMessage('El estado activo debe ser verdadero o falso.'),
 ];
 
-export const createProductValidators = [...productFields, image({ required: true }), validate];
-
-// On edit the photo can stay as it was, so it's only checked when it's sent.
-export const updateProductValidators = [...productFields, image({ required: false }), validate];
+// Same rules to create and to edit: edits send the full product too,
+// including the photo list as it should end up (kept, added, reordered).
+export const productValidators = [...productFields, validate];
 
 export const adjustStockValidators = [
   body('delta')
