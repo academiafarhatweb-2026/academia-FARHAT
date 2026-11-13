@@ -362,7 +362,7 @@ export default function Home() {
 
       <WhatsappButton phone={content?.whatsappNumber} message={WHATSAPP_MESSAGE} floating />
 
-      <ProductDetailModal product={selectedProduct} whatsappNumber={content?.whatsappNumber} onClose={closeProduct} />
+      <ProductDetailModal key={selectedProduct?._id} product={selectedProduct} whatsappNumber={content?.whatsappNumber} onClose={closeProduct} />
 
       <PublicClassModal
         instrument={selectedInstrument}
