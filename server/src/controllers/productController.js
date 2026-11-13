@@ -4,7 +4,7 @@ import { destroyImage } from '../utils/cloudinaryAsset.js';
 import HttpError from '../utils/httpError.js';
 
 const EDITABLE_FIELDS = [
-  'name', 'brand', 'model', 'category', 'condition', 'description', 'image', 'price',
+  'name', 'brand', 'model', 'category', 'condition', 'description', 'images', 'price',
   'discount', 'promotion', 'paymentMethods', 'stock', 'minStock', 'order', 'active',
 ];
 
@@ -19,7 +19,6 @@ function pickProductData(body) {
     if (data[field] !== undefined) data[field] = Number(data[field]);
   }
   if (data.discount !== undefined) data.discount = data.discount === '' ? 0 : Number(data.discount);
-  if (data.image === '') delete data.image; // edit without a new photo keeps the current one
   if (Array.isArray(data.paymentMethods)) data.paymentMethods = [...new Set(data.paymentMethods)];
   return data;
 }
@@ -85,10 +84,11 @@ export async function update(req, res) {
   const product = await Product.findById(req.params.id);
   if (!product) throw new HttpError(404, 'Producto no encontrado');
 
-  const previousImage = product.image;
+  const previousImages = [...product.images];
   product.set(await productDataFrom(req.body));
   await product.save();
-  if (product.image !== previousImage) await destroyImage(previousImage);
+  // Photos taken out of the product are no longer shown anywhere.
+  await Promise.all(previousImages.filter((url) => !product.images.includes(url)).map(destroyImage));
   await renumberOrder(product._id, product.order);
 
   res.json(await Product.findById(product._id));
@@ -97,7 +97,7 @@ export async function update(req, res) {
 export async function remove(req, res) {
   const product = await Product.findByIdAndDelete(req.params.id);
   if (!product) throw new HttpError(404, 'Producto no encontrado');
-  await destroyImage(product.image);
+  await Promise.all(product.images.map(destroyImage));
   await renumberOrder();
   res.json({ message: 'Eliminado' });
 }
@@ -153,6 +153,7 @@ export async function listPublicProducts() {
     condition: p.condition,
     description: p.description,
     image: p.image,
+    images: p.images,
     price: p.price,
     discount: p.discount,
     finalPrice: p.finalPrice,

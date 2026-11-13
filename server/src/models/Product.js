@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import { PAYMENT_METHODS, PRODUCT_CONDITIONS } from '../constants/products.js';
+import { MAX_PRODUCT_IMAGES, PAYMENT_METHODS, PRODUCT_CONDITIONS } from '../constants/products.js';
 
 const productSchema = new mongoose.Schema(
   {
@@ -9,7 +9,14 @@ const productSchema = new mongoose.Schema(
     category: { type: String, required: true, trim: true, maxlength: 40 },
     condition: { type: String, enum: PRODUCT_CONDITIONS, required: true },
     description: { type: String, trim: true, default: '' },
-    image: { type: String, required: true },
+    // In display order: the first one is the main photo.
+    images: {
+      type: [String],
+      validate: (v) => v.length >= 1 && v.length <= MAX_PRODUCT_IMAGES,
+    },
+    // The main photo (always images[0], kept in sync below). Stored on its own
+    // because cards, thumbnails and sales read just this one.
+    image: { type: String },
     price: { type: Number, required: true, min: 0.01 },
     discount: { type: Number, min: 0, max: 100, default: 0 }, // percentage
     promotion: { type: String, trim: true, default: '' },
@@ -30,6 +37,17 @@ const productSchema = new mongoose.Schema(
 productSchema.virtual('finalPrice').get(function finalPrice() {
   const discounted = this.price * (1 - (this.discount || 0) / 100);
   return Math.round(discounted * 100) / 100;
+});
+
+// Products saved before multiple photos existed only have `image`: they read
+// as a one-photo list, and are stored that way on their next save.
+productSchema.post('init', function upgradeSinglePhoto() {
+  if (!this.images?.length && this.image) this.images = [this.image];
+});
+
+productSchema.pre('validate', function syncMainPhoto() {
+  if (!this.images?.length && this.image) this.images = [this.image];
+  this.image = this.images?.[0];
 });
 
 productSchema.index({ order: 1 });

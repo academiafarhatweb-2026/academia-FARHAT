@@ -3,6 +3,9 @@
 
 export const PRODUCT_CONDITIONS = ['new', 'used'];
 
+// Photos per product; the first one is the main photo.
+export const MAX_PRODUCT_IMAGES = 8;
+
 export const PAYMENT_METHODS = [
   'cash',
   'transfer',
