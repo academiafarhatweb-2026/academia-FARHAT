@@ -88,7 +88,7 @@ export default function SaleForm({ product, sale, onSaved }) {
             src={assetUrl(current.image, { width: 120 })}
             crossOrigin="anonymous"
             alt=""
-            className="h-14 w-14 shrink-0 object-contain"
+            className="h-14 w-14 shrink-0 rounded-lg object-cover"
           />
         )}
         <div className="min-w-0">

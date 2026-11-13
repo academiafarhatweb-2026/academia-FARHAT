@@ -10,7 +10,7 @@ import {
   dateField,
   textField,
 } from './fields';
-import { PAYMENT_METHODS, PRODUCT_IMAGE_MAX_BYTES, PRODUCT_IMAGE_TYPES } from '../utils/products';
+import { MAX_PRODUCT_IMAGES, PAYMENT_METHODS, PRODUCT_IMAGE_MAX_BYTES, PRODUCT_IMAGE_TYPES } from '../utils/products';
 import { todayISO } from '../utils/dates';
 
 export const studentSchema = z.object({
@@ -117,47 +117,47 @@ export const studentLoginSchema = z.object({
   email: emailField({ label: 'El email' }),
 });
 
-// One schema for both "Nuevo" and "Modificar": `image` is the photo already
-// saved (empty when creating) and `imageFile` a newly picked one, so a photo
-// is required only when the product doesn't have one yet.
-export const productSchema = z
-  .object({
-    name: textField({ min: 2, max: 100, label: 'El nombre' }),
-    brand: textField({ required: false, max: 60, label: 'La marca' }),
-    model: textField({ required: false, max: 60, label: 'El modelo' }),
-    category: z
-      .string()
-      .trim()
-      .min(1, 'La categoría es obligatoria.')
-      .min(2, 'La categoría debe tener al menos 2 caracteres.')
-      .max(40, 'La categoría debe tener como máximo 40 caracteres.'),
-    condition: z.enum(['new', 'used'], { message: 'El estado es obligatorio.' }),
-    description: textField({ required: false, max: 300, label: 'La descripción' }),
-    price: numberField({ label: 'El precio' }).refine((v) => v.trim() === '' || Number(v) > 0, {
-      message: 'El precio debe ser mayor a 0.',
-    }),
-    discount: numberField({ required: false, min: 0, max: 100, label: 'El descuento' }),
-    promotion: textField({ required: false, max: 80, label: 'La promoción' }),
-    paymentMethods: z.array(z.enum(PAYMENT_METHODS)).min(1, 'Elegí al menos un medio de pago.'),
-    stock: numberField({ min: 0, integer: true, label: 'El stock actual' }),
-    minStock: numberField({ min: 0, integer: true, label: 'El stock mínimo' }),
-    order: numberField({ min: 1, integer: true, label: 'El orden' }),
-    active: z.boolean(),
-    image: z.string(),
-    imageFile: z.instanceof(File).nullable(),
-  })
-  .superRefine((data, ctx) => {
-    const file = data.imageFile;
-    if (!file) {
-      if (!data.image) ctx.addIssue({ code: 'custom', path: ['imageFile'], message: 'La foto es obligatoria.' });
-      return;
-    }
-    if (!PRODUCT_IMAGE_TYPES.includes(file.type)) {
-      ctx.addIssue({ code: 'custom', path: ['imageFile'], message: 'La foto debe ser JPG, PNG o WEBP.' });
-    } else if (file.size > PRODUCT_IMAGE_MAX_BYTES) {
-      ctx.addIssue({ code: 'custom', path: ['imageFile'], message: 'La foto puede pesar como máximo 2 MB.' });
+// A photo in the form: already saved ({ url }) or just picked ({ file }).
+const productPhotoSchema = z
+  .object({ key: z.string(), url: z.string().optional(), file: z.instanceof(File).optional(), preview: z.string().optional() })
+  .superRefine((photo, ctx) => {
+    if (!photo.file) return;
+    if (!PRODUCT_IMAGE_TYPES.includes(photo.file.type)) {
+      ctx.addIssue({ code: 'custom', message: 'Las fotos deben ser JPG, PNG o WEBP.' });
+    } else if (photo.file.size > PRODUCT_IMAGE_MAX_BYTES) {
+      ctx.addIssue({ code: 'custom', message: 'Cada foto puede pesar como máximo 2 MB.' });
     }
   });
+
+// One schema for both "Nuevo" and "Modificar".
+export const productSchema = z.object({
+  name: textField({ min: 2, max: 100, label: 'El nombre' }),
+  brand: textField({ required: false, max: 60, label: 'La marca' }),
+  model: textField({ required: false, max: 60, label: 'El modelo' }),
+  category: z
+    .string()
+    .trim()
+    .min(1, 'La categoría es obligatoria.')
+    .min(2, 'La categoría debe tener al menos 2 caracteres.')
+    .max(40, 'La categoría debe tener como máximo 40 caracteres.'),
+  condition: z.enum(['new', 'used'], { message: 'El estado es obligatorio.' }),
+  description: textField({ required: false, max: 300, label: 'La descripción' }),
+  price: numberField({ label: 'El precio' }).refine((v) => v.trim() === '' || Number(v) > 0, {
+    message: 'El precio debe ser mayor a 0.',
+  }),
+  discount: numberField({ required: false, min: 0, max: 100, label: 'El descuento' }),
+  promotion: textField({ required: false, max: 80, label: 'La promoción' }),
+  paymentMethods: z.array(z.enum(PAYMENT_METHODS)).min(1, 'Elegí al menos un medio de pago.'),
+  stock: numberField({ min: 0, integer: true, label: 'El stock actual' }),
+  minStock: numberField({ min: 0, integer: true, label: 'El stock mínimo' }),
+  order: numberField({ min: 1, integer: true, label: 'El orden' }),
+  active: z.boolean(),
+  // In display order: the first one is the main photo.
+  photos: z
+    .array(productPhotoSchema)
+    .min(1, 'Agregá al menos una foto.')
+    .max(MAX_PRODUCT_IMAGES, `Podés cargar hasta ${MAX_PRODUCT_IMAGES} fotos.`),
+});
 
 // Built per product: the quantity can't exceed what's in stock right now.
 export function saleSchema(maxQuantity) {

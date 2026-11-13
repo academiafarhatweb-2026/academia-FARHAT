@@ -3,14 +3,21 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema } from '../schemas';
 import { productsApi, uploadProductImage } from '../api/products';
-import { assetUrl } from '../utils/assetUrl';
-import {
-  CONDITION_LABELS,
-  PAYMENT_METHOD_LABELS,
-  PRODUCT_IMAGE_TYPES,
-  finalPrice,
-  formatPrice,
-} from '../utils/products';
+import ProductPhotos from './ProductPhotos';
+import { CONDITION_LABELS, PAYMENT_METHOD_LABELS, finalPrice, formatPrice } from '../utils/products';
+
+// Saved photos as form items; products from before multiple photos only have `image`.
+function photosOf(product) {
+  const urls = product.images?.length ? product.images : [product.image].filter(Boolean);
+  return urls.map((url) => ({ key: url, url }));
+}
+
+// First error found on the photo list (the list itself or one of its items).
+function photosError(errors) {
+  const error = errors.photos;
+  if (!error) return '';
+  return error.message || error.root?.message || (Array.isArray(error) ? error.find(Boolean)?.message : '') || '';
+}
 
 function toFormValues(product, nextOrder) {
   if (!product) {
@@ -29,8 +36,7 @@ function toFormValues(product, nextOrder) {
       minStock: '1',
       order: String(nextOrder),
       active: true,
-      image: '',
-      imageFile: null,
+      photos: [],
     };
   }
   return {
@@ -48,12 +54,11 @@ function toFormValues(product, nextOrder) {
     minStock: String(product.minStock),
     order: String(product.order),
     active: product.active,
-    image: product.image || '',
-    imageFile: null,
+    photos: photosOf(product),
   };
 }
 
-function toPayload(data, imageUrl) {
+function toPayload(data, images) {
   return {
     name: data.name.trim(),
     brand: data.brand.trim(),
@@ -69,18 +74,18 @@ function toPayload(data, imageUrl) {
     minStock: Number(data.minStock),
     order: Number(data.order),
     active: data.active,
-    image: imageUrl,
+    images,
   };
 }
 
-// Create/edit form for a stock product. Uploads the picked photo first (the
-// server optimizes it), then saves the product with the resulting URL.
+// Create/edit form for a stock product. Uploads the newly picked photos first
+// (the server optimizes them), then saves the product with the photo list.
 export default function ProductForm({ product, nextOrder, onSave }) {
   const [categories, setCategories] = useState([]);
-  const [preview, setPreview] = useState('');
   const [serverError, setServerError] = useState('');
-  const fileInputRef = useRef(null);
-  const uploadedRef = useRef({ file: null, url: '' });
+  // File → uploaded URL: a retry after a failed save reuses photos already
+  // uploaded instead of sending (and storing) them again.
+  const uploadedRef = useRef(new Map());
 
   const {
     register,
@@ -91,7 +96,7 @@ export default function ProductForm({ product, nextOrder, onSave }) {
     formState: { errors, isSubmitting },
   } = useForm({ resolver: zodResolver(productSchema), defaultValues: toFormValues(product, nextOrder) });
 
-  const [price, discount, image, imageFile] = watch(['price', 'discount', 'image', 'imageFile']);
+  const [price, discount, photos] = watch(['price', 'discount', 'photos']);
   const showPrice = Number(price) > 0;
   const showFinalPrice = showPrice && Number(discount) > 0 && Number(discount) <= 100;
 
@@ -103,96 +108,44 @@ export default function ProductForm({ product, nextOrder, onSave }) {
       .catch(() => setCategories([]));
   }, []);
 
-  // The preview is a local object URL: shown instantly, freed when replaced.
-  useEffect(() => {
-    if (!imageFile) {
-      setPreview('');
-      return undefined;
-    }
-    const url = URL.createObjectURL(imageFile);
-    setPreview(url);
-    return () => URL.revokeObjectURL(url);
-  }, [imageFile]);
-
-  function handleFileChange(e) {
-    const file = e.target.files?.[0] || null;
-    setValue('imageFile', file, { shouldValidate: true, shouldDirty: true });
+  function setPhotos(next) {
+    setValue('photos', next, { shouldValidate: true, shouldDirty: true });
   }
 
-  function clearPickedFile() {
-    setValue('imageFile', null, { shouldValidate: true });
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  async function uploadNewPhotos(list) {
+    const uploaded = uploadedRef.current;
+    await Promise.all(
+      list
+        .filter((photo) => photo.file && !uploaded.has(photo.file))
+        .map(async (photo) => uploaded.set(photo.file, await uploadProductImage(photo.file)))
+    );
+    return list.map((photo) => photo.url || uploaded.get(photo.file));
   }
 
   async function onValid(data) {
     setServerError('');
 
-    let imageUrl = data.image;
-    if (data.imageFile) {
-      // A retry after a failed save reuses the photo already uploaded instead
-      // of sending (and storing) the same file again.
-      if (uploadedRef.current.file !== data.imageFile) {
-        try {
-          uploadedRef.current = { file: data.imageFile, url: await uploadProductImage(data.imageFile) };
-        } catch (err) {
-          setError('imageFile', { message: err.response?.data?.message || 'No se pudo subir la foto. Intentá de nuevo.' });
-          return;
-        }
-      }
-      imageUrl = uploadedRef.current.url;
+    let images;
+    try {
+      images = await uploadNewPhotos(data.photos);
+    } catch (err) {
+      setError('photos', { message: err.response?.data?.message || 'No se pudo subir una de las fotos. Intentá de nuevo.' });
+      return;
     }
 
     try {
-      await onSave(toPayload(data, imageUrl));
+      await onSave(toPayload(data, images));
     } catch (err) {
       const fieldErrors = err.response?.data?.errors;
       // Server-side validation mirrors the form: put each message under its field.
-      fieldErrors?.forEach((e) => setError(e.path === 'image' ? 'imageFile' : e.path, { message: e.msg }));
+      fieldErrors?.forEach((e) => setError(e.path.startsWith('images') ? 'photos' : e.path, { message: e.msg }));
       setServerError(err.response?.data?.message || 'No se pudo guardar el producto. Intentá de nuevo.');
     }
   }
 
-  const currentPhoto = preview || (image ? assetUrl(image, { width: 600 }) : '');
-
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate>
-      <div className="field">
-        <label htmlFor="product-photo">Foto</label>
-        {currentPhoto && (
-          // Same look as on the site: the whole photo, on white, nothing over it.
-          <div className="mb-2">
-            <div className="flex justify-center rounded-xl border border-ink/10 bg-white p-3">
-              <img
-                src={currentPhoto}
-                crossOrigin={preview ? undefined : 'anonymous'}
-                alt="Vista previa"
-                className="block max-h-80 w-auto max-w-full object-contain"
-              />
-            </div>
-            {imageFile && <p className="mt-1 text-xs font-semibold text-gold-dark">Foto nueva, sin guardar todavía</p>}
-          </div>
-        )}
-        <input
-          ref={fileInputRef}
-          id="product-photo"
-          type="file"
-          accept={PRODUCT_IMAGE_TYPES.join(',')}
-          onChange={handleFileChange}
-          className="hidden"
-        />
-        <div className="flex-row">
-          <button type="button" className="btn secondary" onClick={() => fileInputRef.current?.click()}>
-            {currentPhoto ? 'Cambiar foto' : 'Elegir foto'}
-          </button>
-          {imageFile && (
-            <button type="button" className="btn secondary" onClick={clearPickedFile}>
-              Descartar
-            </button>
-          )}
-        </div>
-        <p className="text-xs text-ink/50">JPG, PNG o WEBP, hasta 2 MB.</p>
-        {errors.imageFile && <p className="error">{errors.imageFile.message}</p>}
-      </div>
+      <ProductPhotos photos={photos} onChange={setPhotos} error={photosError(errors)} />
 
       <div className="field">
         <label htmlFor="product-name">Nombre</label>

@@ -1,13 +1,30 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { assetUrl } from '../utils/assetUrl';
 import { CONDITION_LABELS, PAYMENT_METHOD_LABELS, formatPrice, productTitle } from '../utils/products';
 import { PaymentMethodIcon } from './paymentIcons';
+import ProductPhoto from './ProductPhoto';
 import WhatsappButton from './WhatsappButton';
 
-// Public product detail. Closes with the X, a click outside or Escape; on
+const galleryArrow =
+  'absolute top-1/2 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-stage/80 text-2xl leading-none text-ivory transition hover:bg-gold hover:text-ink';
+
+// Products saved before multiple photos existed only have `image`.
+function photosOf(product) {
+  return product?.images?.length ? product.images : [product?.image].filter(Boolean);
+}
+
+// Public product detail with a photo gallery. Closes with the X, a click
+// outside or Escape; arrows (also ← → keys) and thumbnails switch photos. On
 // phones it opens as a bottom sheet so everything stays within thumb reach.
+// Rendered with key={product._id}, so each product starts on its main photo.
 export default function ProductDetailModal({ product, whatsappNumber, onClose }) {
   const closeRef = useRef(null);
+  const [active, setActive] = useState(0);
+  const photos = photosOf(product);
+  const count = photos.length;
+
+  // Wraps around: "next" on the last photo goes back to the first one.
+  const show = useCallback((index) => setActive(((index % count) + count) % count), [count]);
 
   useEffect(() => {
     if (!product) return undefined;
@@ -18,6 +35,8 @@ export default function ProductDetailModal({ product, whatsappNumber, onClose })
 
     function onKeyDown(e) {
       if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowLeft') setActive((i) => (i - 1 + count) % count);
+      if (e.key === 'ArrowRight') setActive((i) => (i + 1) % count);
     }
     document.addEventListener('keydown', onKeyDown);
     return () => {
@@ -25,7 +44,7 @@ export default function ProductDetailModal({ product, whatsappNumber, onClose })
       document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus?.();
     };
-  }, [product, onClose]);
+  }, [product, onClose, count]);
 
   if (!product) return null;
 
@@ -54,18 +73,51 @@ export default function ProductDetailModal({ product, whatsappNumber, onClose })
           &times;
         </button>
 
-        {/* Whole photo, as large as the screen allows, on white; the top
-            padding keeps the close button from covering any of it. */}
-        <div className="flex justify-center bg-white px-6 pb-6 pt-16">
-          <img
-            src={assetUrl(product.image, { width: 1000 })}
-            crossOrigin="anonymous"
-            alt={product.name}
-            className={`block max-h-[55svh] w-auto max-w-full object-contain sm:max-h-[60vh] ${
-              product.inStock ? '' : 'opacity-60 grayscale'
-            }`}
+        {/* Like on the cards: the photo fills the frame, or a white-background
+            shot is shown whole on white (see ProductPhoto). Fixed height, so
+            switching photos doesn't make the page jump; the controls sit on
+            dark circles so they read over any photo. */}
+        <div className="relative h-[50svh] max-h-[36rem] overflow-hidden bg-stage sm:h-[60vh]">
+          <ProductPhoto
+            url={photos[active]}
+            width={1000}
+            alt={photos.length > 1 ? `${product.name} — foto ${active + 1} de ${photos.length}` : product.name}
+            className="h-full w-full"
+            imgClassName={product.inStock ? '' : 'opacity-60 grayscale'}
           />
+          {photos.length > 1 && (
+            <>
+              <button type="button" onClick={() => show(active - 1)} aria-label="Foto anterior" className={galleryArrow + ' left-3'}>
+                ‹
+              </button>
+              <button type="button" onClick={() => show(active + 1)} aria-label="Foto siguiente" className={galleryArrow + ' right-3'}>
+                ›
+              </button>
+              <span className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-stage/80 px-2.5 py-0.5 text-xs font-semibold text-ivory">
+                {active + 1} / {photos.length}
+              </span>
+            </>
+          )}
         </div>
+
+        {photos.length > 1 && (
+          <div className="flex gap-2 overflow-x-auto px-6 pt-4 sm:px-8">
+            {photos.map((url, index) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => setActive(index)}
+                aria-label={`Ver foto ${index + 1}`}
+                aria-current={index === active}
+                className={`h-16 w-16 shrink-0 cursor-pointer overflow-hidden rounded-lg border-2 transition ${
+                  index === active ? 'border-gold' : 'border-transparent opacity-60 hover:opacity-100'
+                }`}
+              >
+                <img src={assetUrl(url, { width: 160 })} crossOrigin="anonymous" alt="" className="h-full w-full object-cover" />
+              </button>
+            ))}
+          </div>
+        )}
 
         <div className="relative z-[2] px-6 py-6 sm:px-8">
           <div className="flex flex-wrap gap-2">
